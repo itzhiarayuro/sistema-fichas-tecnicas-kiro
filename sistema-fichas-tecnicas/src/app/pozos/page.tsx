@@ -440,11 +440,11 @@ function PozoPreviewPanel({
             </div>
             <div className="flex justify-between">
               <dt className="text-gray-500">Tapa (estado):</dt>
-              <dd className="text-gray-900 font-medium">{pozo.estructura.tapaEstado || '-'}</dd>
+              <dd className="text-gray-900 font-medium">{pozo.estadoTapa || '-'}</dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-gray-500">Diámetro cuerpo:</dt>
-              <dd className="text-gray-900 font-medium">{pozo.estructura.cuerpoDiametro || '-'}</dd>
+              <dd className="text-gray-900 font-medium">{pozo.diametroCilindro || '-'}</dd>
             </div>
           </dl>
         </div>
