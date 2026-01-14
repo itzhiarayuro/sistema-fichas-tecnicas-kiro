@@ -148,5 +148,45 @@ PZ1675,Pozo Monitor,Sector J,155.0,Activo,Monitoreo,Seguimiento continuo
 
 ---
 
+## Casos de Excel con Errores Controlados
+
+Además de los ejemplos válidos, el sistema debe ser probado con archivos Excel que contengan errores comunes del mundo real.
+
+### Ejemplos de Errores Comunes
+
+- Columnas con nombres mal escritos (ej: `Logitud` en lugar de `Longitud`)
+- Columnas adicionales no utilizadas por el sistema
+- Columnas obligatorias faltantes
+- Valores de texto en campos numéricos
+- Celdas vacías en identificadores
+
+### Comportamiento Esperado del Sistema
+
+El sistema no debe colapsar ni quedar inutilizable
+Los datos inválidos deben ser ignorados o marcados
+El usuario debe poder continuar trabajando
+La generación de PDF debe seguir siendo posible con la información disponible
+
+### Archivo de Prueba con Errores
+
+```csv
+ID_POZO,NOMBRE,UBICACION,PROFUNDIDAD,ESTADO,TIPO_INCORRECTO,OBSERVACIONES
+PZ1676,Pozo Error1,Sector K,abc,Activo,Extracción,Profundidad inválida
+PZ1677,Pozo Error2,Sector L,,Activo,Inyección,Profundidad faltante
+,Pozo Error3,Sector M,170.0,Activo,Extracción,ID faltante
+PZ1678,Pozo Error4,Sector N,155.0,Estado_Invalido,Extracción,Estado no válido
+PZ1679,Pozo Error5,Sector O,160.0,Activo,,Tipo faltante
+```
+
+### Validación de Resiliencia
+
+✓ Sistema carga archivo sin colapsar
+✓ Datos válidos se importan correctamente
+✓ Datos inválidos se marcan o ignoran
+✓ Usuario recibe mensajes claros sobre errores
+✓ Puede continuar trabajando con datos válidos
+
+---
+
 **Última actualización**: Enero 2026
 **Versión**: 1.0
