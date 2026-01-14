@@ -1,0 +1,11 @@
+﻿ID_POZO,NOMBRE,UBICACION,PROFUNDIDAD,ESTADO,TIPO,OBSERVACIONES
+PZ1666,Pozo Principal,Sector A,150.5,Activo,Extracción,Funcionando correctamente
+PZ1667,Pozo Secundario,Sector B,120.0,Activo,Inyección,Requiere mantenimiento
+PZ1668,Pozo Emergencia,Sector C,180.0,Inactivo,Extracción,En espera de reparación
+PZ1669,Pozo Experimental,Sector D,95.3,Mantenimiento,Prueba,Bajo evaluación
+PZ1670,Pozo Profundo,Sector E,200.0,Activo,Extracción,Profundidad máxima
+PZ1671,Pozo Superficial,Sector F,50.0,Activo,Inyección,Profundidad mínima
+PZ1672,Pozo Reserva,Sector G,165.0,Inactivo,Extracción,En reserva
+PZ1673,Pozo Prueba,Sector H,130.0,Mantenimiento,Prueba,Bajo evaluación
+PZ1674,Pozo Backup,Sector I,145.0,Activo,Extracción,Sistema de respaldo
+PZ1675,Pozo Monitor,Sector J,155.0,Activo,Monitoreo,Seguimiento continuo
