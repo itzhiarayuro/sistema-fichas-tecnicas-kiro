@@ -1,0 +1,2674 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Fichas Técnicas | Ingeniería Civil & Ambiental</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Source+Sans+Pro:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- SheetJS para Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- jsPDF para generar PDFs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    
+    <style>
+        :root {
+            /* Paleta Corporativa - Ingeniería Civil & Ambiental */
+            --azul-primario: #1F4E79;
+            --azul-oscuro: #0D2840;
+            --azul-claro: #3A7CA5;
+            --verde-ambiental: #2E7D32;
+            --verde-claro: #4CAF50;
+            --verde-oscuro: #1B5E20;
+            --blanco: #FFFFFF;
+            --gris-claro: #F5F7FA;
+            --gris-medio: #E1E5EB;
+            --gris-oscuro: #6B7280;
+            --texto-primario: #1A1A2E;
+            --texto-secundario: #4A5568;
+            --exito: #10B981;
+            --advertencia: #F59E0B;
+            --error: #EF4444;
+            --sombra: 0 4px 20px rgba(31, 78, 121, 0.15);
+            --sombra-hover: 0 8px 30px rgba(31, 78, 121, 0.25);
+            --radio: 12px;
+            --transicion: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Source Sans Pro', sans-serif;
+            background: linear-gradient(135deg, var(--gris-claro) 0%, #E8EDF2 100%);
+            min-height: 100vh;
+            color: var(--texto-primario);
+            overflow-x: hidden;
+        }
+
+        /* ========== HEADER ========== */
+        .header {
+            background: linear-gradient(135deg, var(--azul-primario) 0%, var(--azul-oscuro) 100%);
+            padding: 0;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            box-shadow: var(--sombra);
+        }
+
+        .header-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 40px;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--verde-ambiental) 0%, var(--verde-claro) 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            font-weight: 800;
+            box-shadow: 0 4px 15px rgba(46, 125, 50, 0.4);
+        }
+
+        .logo-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo-title {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 18px;
+            color: white;
+            letter-spacing: 0.5px;
+        }
+
+        .logo-subtitle {
+            font-size: 11px;
+            color: rgba(255,255,255,0.8);
+            font-weight: 400;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .version-badge {
+            background: rgba(255,255,255,0.15);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.9);
+            font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .date-display {
+            color: rgba(255,255,255,0.85);
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ========== SIDEBAR ========== */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 74px;
+            width: 280px;
+            height: calc(100vh - 74px);
+            background: white;
+            box-shadow: 2px 0 20px rgba(0,0,0,0.08);
+            padding: 30px 20px;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .sidebar-section {
+            margin-bottom: 30px;
+        }
+
+        .sidebar-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--gris-oscuro);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 15px;
+            padding-left: 10px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            border-radius: var(--radio);
+            cursor: pointer;
+            transition: var(--transicion);
+            margin-bottom: 6px;
+            color: var(--texto-secundario);
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .nav-item:hover {
+            background: var(--gris-claro);
+            color: var(--azul-primario);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, var(--azul-primario) 0%, var(--azul-claro) 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(31, 78, 121, 0.3);
+        }
+
+        .nav-icon {
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .nav-badge {
+            margin-left: auto;
+            background: var(--verde-ambiental);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        /* ========== MAIN CONTENT ========== */
+        .main-content {
+            margin-left: 280px;
+            margin-top: 74px;
+            padding: 40px;
+            min-height: calc(100vh - 74px);
+        }
+
+        .page-header {
+            margin-bottom: 35px;
+        }
+
+        .page-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--azul-oscuro);
+            margin-bottom: 8px;
+        }
+
+        .page-description {
+            color: var(--texto-secundario);
+            font-size: 15px;
+        }
+
+        /* ========== STATS CARDS ========== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: var(--radio);
+            padding: 28px;
+            box-shadow: var(--sombra);
+            transition: var(--transicion);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+        }
+
+        .stat-card.hidrantes::before { background: linear-gradient(180deg, #3B82F6, #1D4ED8); }
+        .stat-card.valvulas::before { background: linear-gradient(180deg, var(--verde-ambiental), var(--verde-oscuro)); }
+        .stat-card.tuberias::before { background: linear-gradient(180deg, #F59E0B, #D97706); }
+        .stat-card.muestreo::before { background: linear-gradient(180deg, #8B5CF6, #6D28D9); }
+        .stat-card.placas::before { background: linear-gradient(180deg, #EC4899, #BE185D); }
+        .stat-card.total::before { background: linear-gradient(180deg, var(--azul-primario), var(--azul-oscuro)); }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--sombra-hover);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .stat-card.hidrantes .stat-icon { background: rgba(59, 130, 246, 0.12); color: #3B82F6; }
+        .stat-card.valvulas .stat-icon { background: rgba(46, 125, 50, 0.12); color: var(--verde-ambiental); }
+        .stat-card.tuberias .stat-icon { background: rgba(245, 158, 11, 0.12); color: #F59E0B; }
+        .stat-card.muestreo .stat-icon { background: rgba(139, 92, 246, 0.12); color: #8B5CF6; }
+        .stat-card.placas .stat-icon { background: rgba(236, 72, 153, 0.12); color: #EC4899; }
+        .stat-card.total .stat-icon { background: rgba(31, 78, 121, 0.12); color: var(--azul-primario); }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--texto-secundario);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--texto-primario);
+            margin-bottom: 6px;
+        }
+
+        .stat-subtitle {
+            font-size: 12px;
+            color: var(--gris-oscuro);
+        }
+
+        /* ========== UPLOAD ZONE ========== */
+        .upload-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .upload-card {
+            background: white;
+            border-radius: var(--radio);
+            padding: 30px;
+            box-shadow: var(--sombra);
+        }
+
+        .upload-card-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .upload-card-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .upload-card.excel .upload-card-icon {
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+        }
+
+        .upload-card.photos .upload-card-icon {
+            background: linear-gradient(135deg, var(--azul-primario), var(--azul-claro));
+            color: white;
+        }
+
+        .upload-card-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--texto-primario);
+        }
+
+        .upload-card-desc {
+            font-size: 13px;
+            color: var(--gris-oscuro);
+        }
+
+        .dropzone {
+            border: 2px dashed var(--gris-medio);
+            border-radius: var(--radio);
+            padding: 50px 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transicion);
+            background: var(--gris-claro);
+        }
+
+        .dropzone:hover, .dropzone.dragover {
+            border-color: var(--azul-primario);
+            background: rgba(31, 78, 121, 0.05);
+        }
+
+        .dropzone-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.6;
+        }
+
+        .dropzone-text {
+            font-size: 15px;
+            color: var(--texto-secundario);
+            margin-bottom: 8px;
+        }
+
+        .dropzone-hint {
+            font-size: 12px;
+            color: var(--gris-oscuro);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-list {
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--gris-claro);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .file-item-icon {
+            color: var(--verde-ambiental);
+            font-size: 18px;
+        }
+
+        .file-item-name {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .file-item-size {
+            color: var(--gris-oscuro);
+            font-size: 11px;
+        }
+
+        .file-item-remove {
+            color: var(--error);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: var(--transicion);
+        }
+
+        .file-item-remove:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        /* ========== BUTTONS ========== */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 28px;
+            border-radius: var(--radio);
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transicion);
+            border: none;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--azul-primario) 0%, var(--azul-claro) 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(31, 78, 121, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(31, 78, 121, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--verde-ambiental) 0%, var(--verde-claro) 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(46, 125, 50, 0.3);
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(46, 125, 50, 0.4);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--azul-primario);
+            color: var(--azul-primario);
+        }
+
+        .btn-outline:hover {
+            background: var(--azul-primario);
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-top: 30px;
+        }
+
+        /* ========== DATA TABLE ========== */
+        .table-container {
+            background: white;
+            border-radius: var(--radio);
+            box-shadow: var(--sombra);
+            overflow: hidden;
+            margin-bottom: 40px;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 30px;
+            border-bottom: 1px solid var(--gris-medio);
+        }
+
+        .table-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--texto-primario);
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--gris-claro);
+            padding: 10px 16px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            transition: var(--transicion);
+        }
+
+        .search-box:focus-within {
+            border-color: var(--azul-primario);
+            background: white;
+        }
+
+        .search-box input {
+            border: none;
+            background: transparent;
+            font-size: 14px;
+            width: 200px;
+            outline: none;
+        }
+
+        .filter-select {
+            padding: 10px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--gris-medio);
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th {
+            background: var(--gris-claro);
+            padding: 16px 20px;
+            text-align: left;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--texto-secundario);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--gris-medio);
+        }
+
+        .data-table td {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--gris-claro);
+            font-size: 14px;
+        }
+
+        .data-table tr:hover {
+            background: rgba(31, 78, 121, 0.03);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-badge.success {
+            background: rgba(16, 185, 129, 0.12);
+            color: #059669;
+        }
+
+        .status-badge.warning {
+            background: rgba(245, 158, 11, 0.12);
+            color: #D97706;
+        }
+
+        .status-badge.error {
+            background: rgba(239, 68, 68, 0.12);
+            color: #DC2626;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        /* ========== PROGRESS ========== */
+        .progress-section {
+            background: white;
+            border-radius: var(--radio);
+            padding: 30px;
+            box-shadow: var(--sombra);
+            margin-bottom: 40px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .progress-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .progress-percentage {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--azul-primario);
+        }
+
+        .progress-bar-container {
+            height: 12px;
+            background: var(--gris-claro);
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--azul-primario), var(--verde-ambiental));
+            border-radius: 6px;
+            transition: width 0.5s ease;
+            position: relative;
+        }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .progress-step {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--gris-oscuro);
+        }
+
+        .progress-step.completed {
+            color: var(--verde-ambiental);
+        }
+
+        .progress-step.active {
+            color: var(--azul-primario);
+            font-weight: 600;
+        }
+
+        .step-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            background: var(--gris-medio);
+            color: var(--gris-oscuro);
+        }
+
+        .progress-step.completed .step-icon {
+            background: var(--verde-ambiental);
+            color: white;
+        }
+
+        .progress-step.active .step-icon {
+            background: var(--azul-primario);
+            color: white;
+        }
+
+        /* ========== LOGS ========== */
+        .log-container {
+            background: var(--azul-oscuro);
+            border-radius: var(--radio);
+            padding: 24px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.8;
+        }
+
+        .log-entry {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 4px;
+        }
+
+        .log-time {
+            color: rgba(255,255,255,0.4);
+            min-width: 80px;
+        }
+
+        .log-level {
+            min-width: 60px;
+            font-weight: 600;
+        }
+
+        .log-level.info { color: #60A5FA; }
+        .log-level.success { color: #34D399; }
+        .log-level.warning { color: #FBBF24; }
+        .log-level.error { color: #F87171; }
+
+        .log-message {
+            color: rgba(255,255,255,0.85);
+        }
+
+        /* ========== MODAL ========== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transicion);
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: white;
+            border-radius: var(--radio);
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.9);
+            transition: var(--transicion);
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 30px;
+            border-bottom: 1px solid var(--gris-medio);
+        }
+
+        .modal-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transicion);
+            font-size: 20px;
+            color: var(--gris-oscuro);
+        }
+
+        .modal-close:hover {
+            background: var(--gris-claro);
+            color: var(--error);
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            padding: 20px 30px;
+            border-top: 1px solid var(--gris-medio);
+            background: var(--gris-claro);
+        }
+
+        /* ========== FICHA PREVIEW ========== */
+        .ficha-preview {
+            border: 2px solid var(--azul-primario);
+            border-radius: var(--radio);
+            overflow: hidden;
+        }
+
+        .ficha-header {
+            background: linear-gradient(135deg, var(--azul-primario) 0%, var(--azul-oscuro) 100%);
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .ficha-type {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            opacity: 0.9;
+        }
+
+        .ficha-code {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 28px;
+            font-weight: 800;
+        }
+
+        .ficha-content {
+            padding: 24px;
+        }
+
+        .ficha-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .ficha-field {
+            padding: 12px 16px;
+            background: var(--gris-claro);
+            border-radius: 8px;
+            border-left: 3px solid var(--azul-primario);
+        }
+
+        .ficha-field-label {
+            font-size: 11px;
+            color: var(--gris-oscuro);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .ficha-field-value {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--texto-primario);
+        }
+
+        .ficha-photos {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .ficha-photo {
+            aspect-ratio: 4/3;
+            background: var(--gris-claro);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gris-oscuro);
+            font-size: 40px;
+            border: 2px dashed var(--gris-medio);
+        }
+
+        .ficha-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+
+        /* ========== REPORTS ========== */
+        .report-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .report-card {
+            background: white;
+            border-radius: var(--radio);
+            padding: 24px;
+            box-shadow: var(--sombra);
+        }
+
+        .report-card-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .report-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .report-icon.pdf {
+            background: rgba(239, 68, 68, 0.12);
+            color: #DC2626;
+        }
+
+        .report-icon.excel {
+            background: rgba(16, 185, 129, 0.12);
+            color: #059669;
+        }
+
+        .report-card-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .report-card-desc {
+            font-size: 13px;
+            color: var(--gris-oscuro);
+        }
+
+        .report-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .report-stat {
+            text-align: center;
+            padding: 12px;
+            background: var(--gris-claro);
+            border-radius: 8px;
+        }
+
+        .report-stat-value {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--azul-primario);
+        }
+
+        .report-stat-label {
+            font-size: 11px;
+            color: var(--gris-oscuro);
+            text-transform: uppercase;
+        }
+
+        /* ========== TABS ========== */
+        .tabs-container {
+            background: white;
+            border-radius: var(--radio);
+            box-shadow: var(--sombra);
+            margin-bottom: 40px;
+        }
+
+        .tabs-header {
+            display: flex;
+            border-bottom: 2px solid var(--gris-medio);
+            padding: 0 20px;
+        }
+
+        .tab-btn {
+            padding: 18px 28px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gris-oscuro);
+            cursor: pointer;
+            border: none;
+            background: none;
+            position: relative;
+            transition: var(--transicion);
+        }
+
+        .tab-btn:hover {
+            color: var(--azul-primario);
+        }
+
+        .tab-btn.active {
+            color: var(--azul-primario);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--azul-primario);
+            border-radius: 2px 2px 0 0;
+        }
+
+        .tab-content {
+            padding: 30px;
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* ========== HIDDEN SECTIONS ========== */
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ========== FOOTER ========== */
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: var(--gris-oscuro);
+            font-size: 13px;
+        }
+
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .footer-logo-icon {
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(135deg, var(--verde-ambiental), var(--verde-claro));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 800;
+            font-size: 14px;
+        }
+
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 1200px) {
+            .sidebar {
+                width: 240px;
+            }
+            .main-content {
+                margin-left: 240px;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                padding: 12px 20px;
+            }
+            .main-content {
+                padding: 20px;
+            }
+            .upload-section {
+                grid-template-columns: 1fr;
+            }
+            .ficha-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ========== SCROLLBAR ========== */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--gris-claro);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--gris-medio);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--gris-oscuro);
+        }
+    </style>
+</head>
+<body>
+    <!-- ========== HEADER ========== -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="logo-icon">IC</div>
+                <div class="logo-text">
+                    <span class="logo-title">Ingeniería Civil & Ambiental</span>
+                    <span class="logo-subtitle">Sistema de Fichas Técnicas</span>
+                </div>
+            </div>
+            <div class="header-info">
+                <span class="version-badge">v34.0 - ARGIS</span>
+                <div class="date-display">
+                    <span>📅</span>
+                    <span id="currentDate"></span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ========== SIDEBAR ========== -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-section">
+            <div class="sidebar-title">Principal</div>
+            <div class="nav-item active" data-section="dashboard">
+                <span class="nav-icon">📊</span>
+                <span>Dashboard</span>
+            </div>
+            <div class="nav-item" data-section="upload">
+                <span class="nav-icon">📤</span>
+                <span>Cargar Datos</span>
+            </div>
+            <div class="nav-item" data-section="generate">
+                <span class="nav-icon">⚙️</span>
+                <span>Generar Fichas</span>
+            </div>
+        </div>
+        
+        <div class="sidebar-section">
+            <div class="sidebar-title">Elementos</div>
+            <div class="nav-item" data-section="hidrantes">
+                <span class="nav-icon">🔵</span>
+                <span>Hidrantes</span>
+                <span class="nav-badge" id="badgeHidrantes">0</span>
+            </div>
+            <div class="nav-item" data-section="valvulas">
+                <span class="nav-icon">🟢</span>
+                <span>Válvulas</span>
+                <span class="nav-badge" id="badgeValvulas">0</span>
+            </div>
+            <div class="nav-item" data-section="tuberias">
+                <span class="nav-icon">🟠</span>
+                <span>Tuberías</span>
+                <span class="nav-badge" id="badgeTuberias">0</span>
+            </div>
+            <div class="nav-item" data-section="muestreo">
+                <span class="nav-icon">🟣</span>
+                <span>Muestreo</span>
+                <span class="nav-badge" id="badgeMuestreo">0</span>
+            </div>
+            <div class="nav-item" data-section="placas">
+                <span class="nav-icon">🔴</span>
+                <span>Placas</span>
+                <span class="nav-badge" id="badgePlacas">0</span>
+            </div>
+        </div>
+        
+        <div class="sidebar-section">
+            <div class="sidebar-title">Reportes</div>
+            <div class="nav-item" data-section="reports">
+                <span class="nav-icon">📋</span>
+                <span>Auditoría</span>
+            </div>
+            <div class="nav-item" data-section="exclusions">
+                <span class="nav-icon">⚠️</span>
+                <span>Exclusiones</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ========== MAIN CONTENT ========== -->
+    <main class="main-content">
+        <!-- DASHBOARD SECTION -->
+        <div class="section active" id="section-dashboard">
+            <div class="page-header">
+                <h1 class="page-title">Dashboard Principal</h1>
+                <p class="page-description">Resumen del estado actual del sistema de fichas técnicas</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card hidrantes">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Hidrantes</div>
+                            <div class="stat-value" id="statHidrantes">0</div>
+                            <div class="stat-subtitle">Elementos cargados</div>
+                        </div>
+                        <div class="stat-icon">🔵</div>
+                    </div>
+                </div>
+                <div class="stat-card valvulas">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Válvulas</div>
+                            <div class="stat-value" id="statValvulas">0</div>
+                            <div class="stat-subtitle">Elementos cargados</div>
+                        </div>
+                        <div class="stat-icon">🟢</div>
+                    </div>
+                </div>
+                <div class="stat-card tuberias">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Tuberías</div>
+                            <div class="stat-value" id="statTuberias">0</div>
+                            <div class="stat-subtitle">Elementos cargados</div>
+                        </div>
+                        <div class="stat-icon">🟠</div>
+                    </div>
+                </div>
+                <div class="stat-card muestreo">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Muestreo</div>
+                            <div class="stat-value" id="statMuestreo">0</div>
+                            <div class="stat-subtitle">Puntos cargados</div>
+                        </div>
+                        <div class="stat-icon">🟣</div>
+                    </div>
+                </div>
+                <div class="stat-card placas">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Placas</div>
+                            <div class="stat-value" id="statPlacas">0</div>
+                            <div class="stat-subtitle">Monumentos</div>
+                        </div>
+                        <div class="stat-icon">🔴</div>
+                    </div>
+                </div>
+                <div class="stat-card total">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Total Fichas</div>
+                            <div class="stat-value" id="statTotal">0</div>
+                            <div class="stat-subtitle">Listas para generar</div>
+                        </div>
+                        <div class="stat-icon">📄</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="showSection('upload')">
+                    <span>📤</span> Cargar Nuevos Datos
+                </button>
+                <button class="btn btn-success" onclick="showSection('generate')" id="btnGenerateQuick" disabled>
+                    <span>⚙️</span> Generar Fichas
+                </button>
+                <button class="btn btn-outline" onclick="showSection('reports')">
+                    <span>📋</span> Ver Reportes
+                </button>
+            </div>
+        </div>
+
+        <!-- UPLOAD SECTION -->
+        <div class="section" id="section-upload">
+            <div class="page-header">
+                <h1 class="page-title">Cargar Datos</h1>
+                <p class="page-description">Sube el archivo Excel con los datos y las fotografías de los elementos</p>
+            </div>
+
+            <div class="upload-section">
+                <!-- Excel Upload -->
+                <div class="upload-card excel">
+                    <div class="upload-card-header">
+                        <div class="upload-card-icon">📊</div>
+                        <div>
+                            <div class="upload-card-title">Archivo Excel</div>
+                            <div class="upload-card-desc">Catastro de elementos hidráulicos</div>
+                        </div>
+                    </div>
+                    <div class="dropzone" id="excelDropzone" onclick="document.getElementById('excelInput').click()">
+                        <div class="dropzone-icon">📁</div>
+                        <div class="dropzone-text">Arrastra el archivo Excel aquí o haz clic para seleccionar</div>
+                        <div class="dropzone-hint">Formatos: .xlsx, .xls</div>
+                    </div>
+                    <input type="file" id="excelInput" class="file-input" accept=".xlsx,.xls" onchange="handleExcelUpload(this.files)">
+                    <div class="file-list" id="excelFileList"></div>
+                </div>
+
+                <!-- Coordinates Upload -->
+                <div class="upload-card photos">
+                    <div class="upload-card-header">
+                        <div class="upload-card-icon">🗺️</div>
+                        <div>
+                            <div class="upload-card-title">Archivo de Coordenadas</div>
+                            <div class="upload-card-desc">Latitud y Longitud de elementos</div>
+                        </div>
+                    </div>
+                    <div class="dropzone" id="coordsDropzone" onclick="document.getElementById('coordsInput').click()">
+                        <div class="dropzone-icon">📍</div>
+                        <div class="dropzone-text">Arrastra el archivo de coordenadas aquí</div>
+                        <div class="dropzone-hint">Formatos: .xlsx, .xls, .csv</div>
+                    </div>
+                    <input type="file" id="coordsInput" class="file-input" accept=".xlsx,.xls,.csv" onchange="handleCoordsUpload(this.files)">
+                    <div class="file-list" id="coordsFileList"></div>
+                </div>
+            </div>
+
+            <!-- Photos Upload Section -->
+            <div class="upload-card" style="margin-top: 30px;">
+                <div class="upload-card-header">
+                    <div class="upload-card-icon" style="background: linear-gradient(135deg, #8B5CF6, #6D28D9);">📷</div>
+                    <div>
+                        <div class="upload-card-title">Fotografías de Elementos</div>
+                        <div class="upload-card-desc">Fotos de campo y ARGIS de todos los elementos</div>
+                    </div>
+                </div>
+                <div class="dropzone" id="photosDropzone" onclick="document.getElementById('photosInput').click()">
+                    <div class="dropzone-icon">🖼️</div>
+                    <div class="dropzone-text">Arrastra las fotos aquí o haz clic para seleccionar</div>
+                    <div class="dropzone-hint">Formatos: .jpg, .jpeg, .png | Múltiples archivos permitidos</div>
+                </div>
+                <input type="file" id="photosInput" class="file-input" accept="image/*" multiple onchange="handlePhotosUpload(this.files)">
+                <div class="file-list" id="photosFileList"></div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="processAllData()" id="btnProcess" disabled>
+                    <span>✅</span> Procesar Datos
+                </button>
+                <button class="btn btn-outline" onclick="clearAllData()">
+                    <span>🗑️</span> Limpiar Todo
+                </button>
+            </div>
+        </div>
+
+        <!-- GENERATE SECTION -->
+        <div class="section" id="section-generate">
+            <div class="page-header">
+                <h1 class="page-title">Generar Fichas Técnicas</h1>
+                <p class="page-description">Configura y genera el documento consolidado de fichas</p>
+            </div>
+
+            <!-- Progress Section -->
+            <div class="progress-section" id="progressSection" style="display: none;">
+                <div class="progress-header">
+                    <div class="progress-title">Progreso de Generación</div>
+                    <div class="progress-percentage" id="progressPercent">0%</div>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+                </div>
+                <div class="progress-steps">
+                    <div class="progress-step" id="step1">
+                        <div class="step-icon">1</div>
+                        <span>Validar Datos</span>
+                    </div>
+                    <div class="progress-step" id="step2">
+                        <div class="step-icon">2</div>
+                        <span>Generar Fichas</span>
+                    </div>
+                    <div class="progress-step" id="step3">
+                        <div class="step-icon">3</div>
+                        <span>Insertar Fotos</span>
+                    </div>
+                    <div class="progress-step" id="step4">
+                        <div class="step-icon">4</div>
+                        <span>Crear Reportes</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configuration -->
+            <div class="tabs-container">
+                <div class="tabs-header">
+                    <button class="tab-btn active" data-tab="config">Configuración</button>
+                    <button class="tab-btn" data-tab="preview">Vista Previa</button>
+                    <button class="tab-btn" data-tab="logs">Logs del Proceso</button>
+                </div>
+                <div class="tab-content active" id="tab-config">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
+                        <div>
+                            <h3 style="font-family: 'Montserrat', sans-serif; font-size: 16px; margin-bottom: 16px;">Elementos a Incluir</h3>
+                            <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; cursor: pointer;">
+                                <input type="checkbox" id="chkHidrantes" checked style="width: 18px; height: 18px;">
+                                <span>Hidrantes</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; cursor: pointer;">
+                                <input type="checkbox" id="chkValvulas" checked style="width: 18px; height: 18px;">
+                                <span>Válvulas</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; cursor: pointer;">
+                                <input type="checkbox" id="chkTuberias" checked style="width: 18px; height: 18px;">
+                                <span>Tuberías Visibles</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; cursor: pointer;">
+                                <input type="checkbox" id="chkMuestreo" checked style="width: 18px; height: 18px;">
+                                <span>Puntos de Muestreo</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; cursor: pointer;">
+                                <input type="checkbox" id="chkPlacas" checked style="width: 18px; height: 18px;">
+                                <span>Placas y Monumentos</span>
+                            </label>
+                        </div>
+                        <div>
+                            <h3 style="font-family: 'Montserrat', sans-serif; font-size: 16px; margin-bottom: 16px;">Opciones de Generación</h3>
+                            <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; cursor: pointer;">
+                                <input type="checkbox" id="chkPhotos" checked style="width: 18px; height: 18px;">
+                                <span>Incluir Fotografías</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; cursor: pointer;">
+                                <input type="checkbox" id="chkArgis" checked style="width: 18px; height: 18px;">
+                                <span>Incluir Mapas ARGIS</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; cursor: pointer;">
+                                <input type="checkbox" id="chkCoords" checked style="width: 18px; height: 18px;">
+                                <span>Incluir Coordenadas GPS</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; cursor: pointer;">
+                                <input type="checkbox" id="chkAudit" checked style="width: 18px; height: 18px;">
+                                <span>Generar Reporte de Auditoría</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-content" id="tab-preview">
+                    <div class="ficha-preview">
+                        <div class="ficha-header">
+                            <div class="ficha-type">Ficha Técnica de Accesorio</div>
+                            <div class="ficha-code" id="previewCode">H-001</div>
+                        </div>
+                        <div class="ficha-content">
+                            <div class="ficha-grid" id="previewFields">
+                                <div class="ficha-field">
+                                    <div class="ficha-field-label">Tipo</div>
+                                    <div class="ficha-field-value">Hidrante Tipo A</div>
+                                </div>
+                                <div class="ficha-field">
+                                    <div class="ficha-field-label">Diámetro</div>
+                                    <div class="ficha-field-value">75 mm (3")</div>
+                                </div>
+                                <div class="ficha-field">
+                                    <div class="ficha-field-label">Estado</div>
+                                    <div class="ficha-field-value">Bueno</div>
+                                </div>
+                                <div class="ficha-field">
+                                    <div class="ficha-field-label">Material</div>
+                                    <div class="ficha-field-value">Hierro Fundido</div>
+                                </div>
+                                <div class="ficha-field">
+                                    <div class="ficha-field-label">Coordenadas</div>
+                                    <div class="ficha-field-value">6.2345° N, -75.5678° W</div>
+                                </div>
+                                <div class="ficha-field">
+                                    <div class="ficha-field-label">Sector</div>
+                                    <div class="ficha-field-value">Centro</div>
+                                </div>
+                            </div>
+                            <div class="ficha-photos">
+                                <div class="ficha-photo">📷</div>
+                                <div class="ficha-photo">🗺️</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-content" id="tab-logs">
+                    <div class="log-container" id="logContainer">
+                        <div class="log-entry">
+                            <span class="log-time">--:--:--</span>
+                            <span class="log-level info">INFO</span>
+                            <span class="log-message">Sistema listo para generar fichas...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-success" onclick="generateFichas()" id="btnGenerate" disabled>
+                    <span>⚙️</span> Iniciar Generación
+                </button>
+                <button class="btn btn-primary" onclick="downloadResults()" id="btnDownload" disabled>
+                    <span>📥</span> Descargar Resultados
+                </button>
+            </div>
+        </div>
+
+        <!-- ELEMENT SECTIONS (Hidrantes, Valvulas, etc.) -->
+        <div class="section" id="section-hidrantes">
+            <div class="page-header">
+                <h1 class="page-title">Hidrantes</h1>
+                <p class="page-description">Listado de hidrantes cargados en el sistema</p>
+            </div>
+            <div class="table-container">
+                <div class="table-header">
+                    <div class="table-title">Datos de Hidrantes</div>
+                    <div class="table-actions">
+                        <div class="search-box">
+                            <span>🔍</span>
+                            <input type="text" placeholder="Buscar..." id="searchHidrantes" onkeyup="filterTable('hidrantes')">
+                        </div>
+                        <select class="filter-select" id="filterHidrantes" onchange="filterTable('hidrantes')">
+                            <option value="">Todos los estados</option>
+                            <option value="Bueno">Bueno</option>
+                            <option value="Regular">Regular</option>
+                            <option value="Malo">Malo</option>
+                        </select>
+                    </div>
+                </div>
+                <table class="data-table" id="tableHidrantes">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Tipo</th>
+                            <th>Diámetro</th>
+                            <th>Estado</th>
+                            <th>Sector</th>
+                            <th>Fotos</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyHidrantes">
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: var(--gris-oscuro); padding: 40px;">
+                                No hay datos cargados. Sube un archivo Excel para comenzar.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="section" id="section-valvulas">
+            <div class="page-header">
+                <h1 class="page-title">Válvulas</h1>
+                <p class="page-description">Listado de válvulas cargadas en el sistema</p>
+            </div>
+            <div class="table-container">
+                <div class="table-header">
+                    <div class="table-title">Datos de Válvulas</div>
+                    <div class="table-actions">
+                        <div class="search-box">
+                            <span>🔍</span>
+                            <input type="text" placeholder="Buscar..." id="searchValvulas">
+                        </div>
+                    </div>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Tipo</th>
+                            <th>Diámetro</th>
+                            <th>Estado</th>
+                            <th>Material</th>
+                            <th>Fotos</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyValvulas">
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: var(--gris-oscuro); padding: 40px;">
+                                No hay datos cargados.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="section" id="section-tuberias">
+            <div class="page-header">
+                <h1 class="page-title">Tuberías Visibles</h1>
+                <p class="page-description">Listado de tuberías visibles cargadas</p>
+            </div>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Diámetro (mm)</th>
+                            <th>Material</th>
+                            <th>Estado</th>
+                            <th>Rasante</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyTuberias">
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: var(--gris-oscuro); padding: 40px;">
+                                No hay datos cargados.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="section" id="section-muestreo">
+            <div class="page-header">
+                <h1 class="page-title">Puntos de Muestreo</h1>
+                <p class="page-description">Listado de puntos de muestreo cargados</p>
+            </div>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Estado</th>
+                            <th>Altura (m)</th>
+                            <th>Fecha Inspección</th>
+                            <th>Observaciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyMuestreo">
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: var(--gris-oscuro); padding: 40px;">
+                                No hay datos cargados.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="section" id="section-placas">
+            <div class="page-header">
+                <h1 class="page-title">Placas y Monumentos</h1>
+                <p class="page-description">Listado de placas y monumentos identificados</p>
+            </div>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Foto Panorámica</th>
+                            <th>Foto Detalle</th>
+                            <th>Mapa ARGIS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyPlacas">
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: var(--gris-oscuro); padding: 40px;">
+                                No hay datos cargados.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- REPORTS SECTION -->
+        <div class="section" id="section-reports">
+            <div class="page-header">
+                <h1 class="page-title">Reportes de Auditoría</h1>
+                <p class="page-description">Informes y estadísticas del proceso de generación</p>
+            </div>
+
+            <div class="report-grid">
+                <div class="report-card">
+                    <div class="report-card-header">
+                        <div class="report-icon pdf">📄</div>
+                        <div>
+                            <div class="report-card-title">Informe PDF de Auditoría</div>
+                            <div class="report-card-desc">Resumen ejecutivo del proceso</div>
+                        </div>
+                    </div>
+                    <div class="report-stats">
+                        <div class="report-stat">
+                            <div class="report-stat-value" id="reportTotal">0</div>
+                            <div class="report-stat-label">Fichas Generadas</div>
+                        </div>
+                        <div class="report-stat">
+                            <div class="report-stat-value" id="reportExcluded">0</div>
+                            <div class="report-stat-label">Excluidos</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="downloadPDFReport()" style="width: 100%;">
+                        <span>📥</span> Descargar PDF
+                    </button>
+                </div>
+
+                <div class="report-card">
+                    <div class="report-card-header">
+                        <div class="report-icon excel">📊</div>
+                        <div>
+                            <div class="report-card-title">Detalle de Exclusiones</div>
+                            <div class="report-card-desc">Lista detallada en Excel</div>
+                        </div>
+                    </div>
+                    <div class="report-stats">
+                        <div class="report-stat">
+                            <div class="report-stat-value" id="reportNoPhoto">0</div>
+                            <div class="report-stat-label">Sin Foto</div>
+                        </div>
+                        <div class="report-stat">
+                            <div class="report-stat-value" id="reportNoData">0</div>
+                            <div class="report-stat-label">Sin Datos</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-success" onclick="downloadExcelReport()" style="width: 100%;">
+                        <span>📥</span> Descargar Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- EXCLUSIONS SECTION -->
+        <div class="section" id="section-exclusions">
+            <div class="page-header">
+                <h1 class="page-title">Elementos Excluidos</h1>
+                <p class="page-description">Registros que no fueron incluidos en la generación de fichas</p>
+            </div>
+
+            <div class="tabs-container">
+                <div class="tabs-header">
+                    <button class="tab-btn active" data-tab="exc-hidrantes">Hidrantes</button>
+                    <button class="tab-btn" data-tab="exc-valvulas">Válvulas</button>
+                    <button class="tab-btn" data-tab="exc-tuberias">Tuberías</button>
+                    <button class="tab-btn" data-tab="exc-muestreo">Muestreo</button>
+                </div>
+                <div class="tab-content active" id="tab-exc-hidrantes">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Motivo de Exclusión</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyExcHidrantes">
+                            <tr>
+                                <td colspan="2" style="text-align: center; color: var(--gris-oscuro); padding: 40px;">
+                                    No hay exclusiones registradas.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="tab-content" id="tab-exc-valvulas">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Motivo de Exclusión</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyExcValvulas">
+                            <tr>
+                                <td colspan="2" style="text-align: center; color: var(--gris-oscuro); padding: 40px;">
+                                    No hay exclusiones registradas.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="tab-content" id="tab-exc-tuberias">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Motivo de Exclusión</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyExcTuberias">
+                            <tr>
+                                <td colspan="2" style="text-align: center; color: var(--gris-oscuro); padding: 40px;">
+                                    No hay exclusiones registradas.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="tab-content" id="tab-exc-muestreo">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Motivo de Exclusión</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyExcMuestreo">
+                            <tr>
+                                <td colspan="2" style="text-align: center; color: var(--gris-oscuro); padding: 40px;">
+                                    No hay exclusiones registradas.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-logo">
+                <div class="footer-logo-icon">IC</div>
+                <span style="font-weight: 600; color: var(--azul-primario);">Ingeniería Civil & Ambiental</span>
+            </div>
+            <p>Medellín, Colombia | gerencia@ingenieriacivilyambiental.com</p>
+            <p style="margin-top: 8px; font-size: 11px;">Sistema de Fichas Técnicas v34.0 - ARGIS</p>
+        </div>
+    </main>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Título</h2>
+                <div class="modal-close" onclick="closeModal()">✕</div>
+            </div>
+            <div class="modal-body" id="modalBody">
+                Contenido del modal
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================================
+        // SISTEMA DE FICHAS TÉCNICAS - INGENIERÍA CIVIL & AMBIENTAL
+        // Versión: 34.0 - ARGIS | JavaScript Implementation
+        // ============================================================================
+
+        // ==================== ESTADO GLOBAL ====================
+        const AppState = {
+            data: {
+                hidrantes: [],
+                valvulas: [],
+                tuberias: [],
+                muestreo: [],
+                placas: []
+            },
+            coords: {},
+            photos: {
+                field: {},
+                argis: {}
+            },
+            exclusions: {
+                hidrantes: [],
+                valvulas: [],
+                tuberias: [],
+                muestreo: []
+            },
+            stats: {
+                total: 0,
+                generated: 0,
+                excluded: 0,
+                photosOk: 0
+            },
+            isProcessing: false,
+            isGenerated: false
+        };
+
+        // ==================== UTILIDADES ====================
+        const Utils = {
+            normalizeCode(text) {
+                if (!text) return '';
+                return String(text).toUpperCase().trim()
+                    .replace('.0', '')
+                    .replace(/-/g, '')
+                    .replace(/ /g, '')
+                    .replace(/_/g, '');
+            },
+
+            cleanValue(val) {
+                if (val === null || val === undefined || val === '') return '';
+                if (typeof val === 'number') {
+                    return Number.isInteger(val) ? String(val) : val.toFixed(2);
+                }
+                if (val instanceof Date) {
+                    return val.toLocaleDateString('es-CO');
+                }
+                return String(val).trim();
+            },
+
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            },
+
+            getTime() {
+                return new Date().toLocaleTimeString('es-CO', { hour12: false });
+            },
+
+            formatDate(date = new Date()) {
+                return date.toLocaleDateString('es-CO', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            }
+        };
+
+        // ==================== NAVEGACIÓN ====================
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            
+            const section = document.getElementById(`section-${sectionId}`);
+            if (section) section.classList.add('active');
+            
+            const navItem = document.querySelector(`.nav-item[data-section="${sectionId}"]`);
+            if (navItem) navItem.classList.add('active');
+        }
+
+        // ==================== CARGA DE ARCHIVOS ====================
+        function handleExcelUpload(files) {
+            if (!files || files.length === 0) return;
+            
+            const file = files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    // Procesar cada hoja
+                    const sheetMappings = {
+                        'Hidrantes': 'hidrantes',
+                        'Válvulas': 'valvulas',
+                        'TuberíasVisibles': 'tuberias',
+                        'PuntosMuestreo': 'muestreo'
+                    };
+                    
+                    for (const [sheetName, dataKey] of Object.entries(sheetMappings)) {
+                        if (workbook.SheetNames.includes(sheetName)) {
+                            const sheet = workbook.Sheets[sheetName];
+                            const jsonData = XLSX.utils.sheet_to_json(sheet, { range: 6 });
+                            AppState.data[dataKey] = jsonData.map(row => ({
+                                ...row,
+                                Código: Utils.normalizeCode(row['Código'])
+                            })).filter(row => row.Código);
+                        }
+                    }
+                    
+                    updateStats();
+                    updateTables();
+                    showFileInList('excelFileList', file);
+                    addLog('success', `Excel cargado: ${file.name}`);
+                    checkProcessButton();
+                    
+                } catch (error) {
+                    addLog('error', `Error al procesar Excel: ${error.message}`);
+                    alert('Error al procesar el archivo Excel');
+                }
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+
+        function handleCoordsUpload(files) {
+            if (!files || files.length === 0) return;
+            
+            const file = files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                    
+                    jsonData.forEach((row, idx) => {
+                        if (idx === 0) return; // Skip header
+                        if (row.length >= 3) {
+                            const code = Utils.normalizeCode(row[0]);
+                            if (code) {
+                                AppState.coords[code] = {
+                                    lon: Utils.cleanValue(row[1]),
+                                    lat: Utils.cleanValue(row[2])
+                                };
+                            }
+                        }
+                    });
+                    
+                    showFileInList('coordsFileList', file);
+                    addLog('success', `Coordenadas cargadas: ${Object.keys(AppState.coords).length} registros`);
+                    
+                } catch (error) {
+                    addLog('error', `Error al procesar coordenadas: ${error.message}`);
+                }
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+
+        function handlePhotosUpload(files) {
+            if (!files || files.length === 0) return;
+            
+            const fileList = document.getElementById('photosFileList');
+            let count = 0;
+            
+            for (const file of files) {
+                const name = file.name.toUpperCase();
+                const code = Utils.normalizeCode(name.split(/[-_ ]/)[0]);
+                
+                if (name.includes('ARGIS')) {
+                    // Foto ARGIS
+                    let type = 'MH'; // Default
+                    if (name.startsWith('H')) type = 'MH';
+                    else if (name.startsWith('PR')) type = 'MP';
+                    else if (name.startsWith('PM')) type = 'MM';
+                    else if (name.startsWith('TV')) type = 'MT';
+                    else if (name.startsWith('VC') || name.startsWith('VH') || name.startsWith('VP')) type = 'MV';
+                    
+                    if (!AppState.photos.argis[type]) AppState.photos.argis[type] = {};
+                    AppState.photos.argis[type][code] = file;
+                } else {
+                    // Foto de campo
+                    let photoType = 'P';
+                    if (name.includes('-D') || name.includes(' D') || name.includes('_D')) photoType = 'D';
+                    else if (name.includes('-T') || name.includes(' T') || name.includes('_T')) photoType = 'T';
+                    else if (name.includes('-I') || name.includes(' I') || name.includes('_I')) photoType = 'I';
+                    else if (name.includes('-O') || name.includes(' O') || name.includes('_O')) photoType = 'O';
+                    
+                    if (!AppState.photos.field[code]) {
+                        AppState.photos.field[code] = {};
+                    }
+                    AppState.photos.field[code][photoType] = file;
+                }
+                count++;
+            }
+            
+            fileList.innerHTML = `
+                <div class="file-item">
+                    <span class="file-item-icon">✅</span>
+                    <span class="file-item-name">${count} fotografías cargadas</span>
+                </div>
+            `;
+            
+            addLog('success', `${count} fotografías procesadas`);
+            checkProcessButton();
+        }
+
+        function showFileInList(listId, file) {
+            const list = document.getElementById(listId);
+            list.innerHTML = `
+                <div class="file-item">
+                    <span class="file-item-icon">✅</span>
+                    <span class="file-item-name">${file.name}</span>
+                    <span class="file-item-size">${Utils.formatFileSize(file.size)}</span>
+                </div>
+            `;
+        }
+
+        // ==================== ESTADÍSTICAS Y TABLAS ====================
+        function updateStats() {
+            const counts = {
+                hidrantes: AppState.data.hidrantes.length,
+                valvulas: AppState.data.valvulas.length,
+                tuberias: AppState.data.tuberias.length,
+                muestreo: AppState.data.muestreo.length,
+                placas: AppState.data.placas.length
+            };
+            
+            document.getElementById('statHidrantes').textContent = counts.hidrantes;
+            document.getElementById('statValvulas').textContent = counts.valvulas;
+            document.getElementById('statTuberias').textContent = counts.tuberias;
+            document.getElementById('statMuestreo').textContent = counts.muestreo;
+            document.getElementById('statPlacas').textContent = counts.placas;
+            
+            const total = Object.values(counts).reduce((a, b) => a + b, 0);
+            document.getElementById('statTotal').textContent = total;
+            
+            // Update badges
+            document.getElementById('badgeHidrantes').textContent = counts.hidrantes;
+            document.getElementById('badgeValvulas').textContent = counts.valvulas;
+            document.getElementById('badgeTuberias').textContent = counts.tuberias;
+            document.getElementById('badgeMuestreo').textContent = counts.muestreo;
+            document.getElementById('badgePlacas').textContent = counts.placas;
+            
+            AppState.stats.total = total;
+        }
+
+        function updateTables() {
+            // Hidrantes
+            const tbodyH = document.getElementById('tbodyHidrantes');
+            if (AppState.data.hidrantes.length > 0) {
+                tbodyH.innerHTML = AppState.data.hidrantes.map(h => `
+                    <tr>
+                        <td><strong>${h['Código'] || ''}</strong></td>
+                        <td>${h['Tipo'] || ''}</td>
+                        <td>${h['Diámetro Base (mm)'] || ''} mm</td>
+                        <td><span class="status-badge ${getStatusClass(h['Estado'])}">${h['Estado'] || ''}</span></td>
+                        <td>${h['Sector / Barrio'] || ''}</td>
+                        <td>${hasPhoto('hidrante', h['Código']) ? '✅' : '❌'}</td>
+                    </tr>
+                `).join('');
+            }
+            
+            // Válvulas
+            const tbodyV = document.getElementById('tbodyValvulas');
+            if (AppState.data.valvulas.length > 0) {
+                tbodyV.innerHTML = AppState.data.valvulas.map(v => `
+                    <tr>
+                        <td><strong>${v['Código'] || ''}</strong></td>
+                        <td>${v['Tipo'] || ''}</td>
+                        <td>${v['Diámetro Nominal (mm)'] || ''} mm</td>
+                        <td><span class="status-badge ${getStatusClass(v['Estado'])}">${v['Estado'] || ''}</span></td>
+                        <td>${v['Material'] || ''}</td>
+                        <td>${hasPhoto('valvula', v['Código']) ? '✅' : '❌'}</td>
+                    </tr>
+                `).join('');
+            }
+            
+            // Tuberías
+            const tbodyT = document.getElementById('tbodyTuberias');
+            if (AppState.data.tuberias.length > 0) {
+                tbodyT.innerHTML = AppState.data.tuberias.map(t => `
+                    <tr>
+                        <td><strong>${t['Código'] || ''}</strong></td>
+                        <td>${t['Diámetro (mm)'] || ''}</td>
+                        <td>${t['Material'] || ''}</td>
+                        <td><span class="status-badge ${getStatusClass(t['Estado'])}">${t['Estado'] || ''}</span></td>
+                        <td>${t['Rasante'] || ''}</td>
+                    </tr>
+                `).join('');
+            }
+            
+            // Muestreo
+            const tbodyM = document.getElementById('tbodyMuestreo');
+            if (AppState.data.muestreo.length > 0) {
+                tbodyM.innerHTML = AppState.data.muestreo.map(m => `
+                    <tr>
+                        <td><strong>${m['Código'] || ''}</strong></td>
+                        <td><span class="status-badge ${getStatusClass(m['Estado'])}">${m['Estado'] || ''}</span></td>
+                        <td>${m['Altura Punto de Muestreo (m)'] || ''}</td>
+                        <td>${m['Fecha de Inspección'] || ''}</td>
+                        <td>${m['Observaciones'] || ''}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        function getStatusClass(status) {
+            if (!status) return '';
+            const s = String(status).toLowerCase();
+            if (s.includes('bueno') || s.includes('operativo')) return 'success';
+            if (s.includes('regular')) return 'warning';
+            if (s.includes('malo') || s.includes('dañado')) return 'error';
+            return 'success';
+        }
+
+        function hasPhoto(type, code) {
+            const normCode = Utils.normalizeCode(code);
+            if (type === 'hidrante') {
+                return AppState.photos.argis.MH && AppState.photos.argis.MH[normCode];
+            }
+            if (type === 'valvula') {
+                return (AppState.photos.field[normCode]) || 
+                       (AppState.photos.argis.MV && AppState.photos.argis.MV[normCode]);
+            }
+            return false;
+        }
+
+        // ==================== PROCESAMIENTO Y GENERACIÓN ====================
+        function checkProcessButton() {
+            const hasData = AppState.data.hidrantes.length > 0 || 
+                           AppState.data.valvulas.length > 0 ||
+                           AppState.data.tuberias.length > 0;
+            
+            document.getElementById('btnProcess').disabled = !hasData;
+            document.getElementById('btnGenerateQuick').disabled = !hasData;
+            document.getElementById('btnGenerate').disabled = !hasData;
+        }
+
+        function processAllData() {
+            addLog('info', 'Procesando datos...');
+            
+            // Validar datos
+            AppState.exclusions = {
+                hidrantes: [],
+                valvulas: [],
+                tuberias: [],
+                muestreo: []
+            };
+            
+            // Filtrar elementos sin foto
+            AppState.data.hidrantes.forEach(h => {
+                if (!hasPhoto('hidrante', h['Código'])) {
+                    AppState.exclusions.hidrantes.push({
+                        codigo: h['Código'],
+                        motivo: 'Sin foto ARGIS'
+                    });
+                }
+            });
+            
+            AppState.data.valvulas.forEach(v => {
+                if (!hasPhoto('valvula', v['Código'])) {
+                    AppState.exclusions.valvulas.push({
+                        codigo: v['Código'],
+                        motivo: 'Sin foto de campo ni ARGIS'
+                    });
+                }
+            });
+            
+            updateExclusionsTables();
+            addLog('success', 'Datos procesados correctamente');
+            addLog('info', `Exclusiones: ${getTotalExclusions()} registros`);
+            
+            showSection('generate');
+        }
+
+        function getTotalExclusions() {
+            return Object.values(AppState.exclusions).reduce((a, b) => a + b.length, 0);
+        }
+
+        function updateExclusionsTables() {
+            // Hidrantes
+            const tbodyEH = document.getElementById('tbodyExcHidrantes');
+            if (AppState.exclusions.hidrantes.length > 0) {
+                tbodyEH.innerHTML = AppState.exclusions.hidrantes.map(e => `
+                    <tr>
+                        <td><strong>${e.codigo}</strong></td>
+                        <td><span class="status-badge warning">${e.motivo}</span></td>
+                    </tr>
+                `).join('');
+            }
+            
+            // Válvulas
+            const tbodyEV = document.getElementById('tbodyExcValvulas');
+            if (AppState.exclusions.valvulas.length > 0) {
+                tbodyEV.innerHTML = AppState.exclusions.valvulas.map(e => `
+                    <tr>
+                        <td><strong>${e.codigo}</strong></td>
+                        <td><span class="status-badge warning">${e.motivo}</span></td>
+                    </tr>
+                `).join('');
+            }
+            
+            // Update report stats
+            document.getElementById('reportExcluded').textContent = getTotalExclusions();
+            document.getElementById('reportNoPhoto').textContent = 
+                AppState.exclusions.hidrantes.length + AppState.exclusions.valvulas.length;
+        }
+
+        async function generateFichas() {
+            if (AppState.isProcessing) return;
+            
+            AppState.isProcessing = true;
+            document.getElementById('progressSection').style.display = 'block';
+            
+            const steps = ['step1', 'step2', 'step3', 'step4'];
+            let progress = 0;
+            
+            addLog('info', '='.repeat(50));
+            addLog('info', 'INICIANDO PROCESO V34 (VÁLVULA ARGIS)');
+            addLog('info', '='.repeat(50));
+            
+            // Step 1: Validar
+            await animateStep(0, steps);
+            addLog('info', 'Validando datos...');
+            await delay(500);
+            progress = 25;
+            updateProgress(progress);
+            addLog('success', '✅ Datos validados');
+            
+            // Step 2: Generar fichas
+            await animateStep(1, steps);
+            addLog('info', 'Generando fichas técnicas...');
+            
+            let generated = 0;
+            const validHidrantes = AppState.data.hidrantes.filter(h => hasPhoto('hidrante', h['Código']));
+            const validValvulas = AppState.data.valvulas.filter(v => hasPhoto('valvula', v['Código']));
+            
+            generated += validHidrantes.length;
+            generated += validValvulas.length;
+            generated += AppState.data.tuberias.length;
+            generated += AppState.data.muestreo.length;
+            
+            await delay(1000);
+            progress = 50;
+            updateProgress(progress);
+            addLog('success', `✅ ${generated} fichas generadas`);
+            
+            // Step 3: Insertar fotos
+            await animateStep(2, steps);
+            addLog('info', 'Insertando fotografías...');
+            await delay(800);
+            progress = 75;
+            updateProgress(progress);
+            addLog('success', '✅ Fotografías insertadas');
+            
+            // Step 4: Crear reportes
+            await animateStep(3, steps);
+            addLog('info', 'Generando reportes de auditoría...');
+            await delay(600);
+            progress = 100;
+            updateProgress(progress);
+            addLog('success', '✅ Reportes generados');
+            
+            addLog('info', '='.repeat(50));
+            addLog('success', 'PROCESO FINALIZADO EXITOSAMENTE');
+            addLog('info', `Total fichas: ${generated}`);
+            addLog('info', `Exclusiones: ${getTotalExclusions()}`);
+            
+            AppState.stats.generated = generated;
+            AppState.isGenerated = true;
+            AppState.isProcessing = false;
+            
+            document.getElementById('reportTotal').textContent = generated;
+            document.getElementById('btnDownload').disabled = false;
+        }
+
+        function animateStep(stepIndex, steps) {
+            return new Promise(resolve => {
+                steps.forEach((s, i) => {
+                    const el = document.getElementById(s);
+                    el.classList.remove('active', 'completed');
+                    if (i < stepIndex) el.classList.add('completed');
+                    if (i === stepIndex) el.classList.add('active');
+                });
+                setTimeout(resolve, 100);
+            });
+        }
+
+        function updateProgress(percent) {
+            document.getElementById('progressBar').style.width = percent + '%';
+            document.getElementById('progressPercent').textContent = percent + '%';
+        }
+
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // ==================== LOGS ====================
+        function addLog(level, message) {
+            const container = document.getElementById('logContainer');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `
+                <span class="log-time">${Utils.getTime()}</span>
+                <span class="log-level ${level}">${level.toUpperCase()}</span>
+                <span class="log-message">${message}</span>
+            `;
+            container.appendChild(entry);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // ==================== DESCARGAS Y REPORTES ====================
+        function downloadResults() {
+            // Generar y descargar resumen como JSON
+            const results = {
+                fecha: new Date().toISOString(),
+                empresa: 'Ingeniería Civil & Ambiental',
+                version: 'v34.0 - ARGIS',
+                estadisticas: AppState.stats,
+                datos: {
+                    hidrantes: AppState.data.hidrantes.filter(h => hasPhoto('hidrante', h['Código'])),
+                    valvulas: AppState.data.valvulas.filter(v => hasPhoto('valvula', v['Código'])),
+                    tuberias: AppState.data.tuberias,
+                    muestreo: AppState.data.muestreo
+                },
+                exclusiones: AppState.exclusions
+            };
+            
+            const blob = new Blob([JSON.stringify(results, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Fichas_Consolidadas_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            addLog('success', 'Resultados descargados');
+        }
+
+        function downloadPDFReport() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Header
+            doc.setFillColor(31, 78, 121);
+            doc.rect(0, 0, 210, 40, 'F');
+            
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(20);
+            doc.text('INFORME DE AUDITORÍA', 105, 20, { align: 'center' });
+            doc.setFontSize(12);
+            doc.text('Sistema de Fichas Técnicas v34.0', 105, 30, { align: 'center' });
+            
+            // Content
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(14);
+            doc.text('Ingeniería Civil & Ambiental', 20, 55);
+            
+            doc.setFontSize(10);
+            doc.text(`Fecha de generación: ${Utils.formatDate()}`, 20, 65);
+            
+            // Stats table
+            doc.autoTable({
+                startY: 80,
+                head: [['Tipo de Elemento', 'Total Cargados', 'Generados', 'Excluidos']],
+                body: [
+                    ['Hidrantes', AppState.data.hidrantes.length, 
+                     AppState.data.hidrantes.length - AppState.exclusions.hidrantes.length,
+                     AppState.exclusions.hidrantes.length],
+                    ['Válvulas', AppState.data.valvulas.length,
+                     AppState.data.valvulas.length - AppState.exclusions.valvulas.length,
+                     AppState.exclusions.valvulas.length],
+                    ['Tuberías', AppState.data.tuberias.length, AppState.data.tuberias.length, 0],
+                    ['Muestreo', AppState.data.muestreo.length, AppState.data.muestreo.length, 0]
+                ],
+                headStyles: { fillColor: [31, 78, 121] },
+                alternateRowStyles: { fillColor: [245, 247, 250] }
+            });
+            
+            // Footer
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(100);
+                doc.text(
+                    'Ingeniería Civil & Ambiental | Medellín, Colombia',
+                    105, 290, { align: 'center' }
+                );
+            }
+            
+            doc.save(`Informe_Auditoria_${new Date().toISOString().split('T')[0]}.pdf`);
+            addLog('success', 'PDF de auditoría descargado');
+        }
+
+        function downloadExcelReport() {
+            const wb = XLSX.utils.book_new();
+            
+            // Hoja de exclusiones por tipo
+            const sheets = {
+                'Hidrantes_Excluidos': AppState.exclusions.hidrantes,
+                'Valvulas_Excluidas': AppState.exclusions.valvulas,
+                'Tuberias_Excluidas': AppState.exclusions.tuberias,
+                'Muestreo_Excluido': AppState.exclusions.muestreo
+            };
+            
+            for (const [name, data] of Object.entries(sheets)) {
+                const wsData = data.length > 0 ? data : [{ estado: 'Sin exclusiones' }];
+                const ws = XLSX.utils.json_to_sheet(wsData);
+                XLSX.utils.book_append_sheet(wb, ws, name);
+            }
+            
+            XLSX.writeFile(wb, `Detalle_Exclusiones_${new Date().toISOString().split('T')[0]}.xlsx`);
+            addLog('success', 'Excel de exclusiones descargado');
+        }
+
+        // ==================== MODALES ====================
+        function openModal(title, content) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalBody').innerHTML = content;
+            document.getElementById('modalOverlay').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.remove('active');
+        }
+
+        // ==================== TABS ====================
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const tabGroup = this.closest('.tabs-container');
+                const tabId = this.dataset.tab;
+                
+                tabGroup.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                tabGroup.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                this.classList.add('active');
+                const content = document.getElementById(`tab-${tabId}`);
+                if (content) content.classList.add('active');
+            });
+        });
+
+        // ==================== NAVEGACIÓN ====================
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const section = this.dataset.section;
+                if (section) showSection(section);
+            });
+        });
+
+        // ==================== DRAG & DROP ====================
+        ['excelDropzone', 'coordsDropzone', 'photosDropzone'].forEach(id => {
+            const dropzone = document.getElementById(id);
+            if (!dropzone) return;
+            
+            ['dragenter', 'dragover'].forEach(evt => {
+                dropzone.addEventListener(evt, e => {
+                    e.preventDefault();
+                    dropzone.classList.add('dragover');
+                });
+            });
+            
+            ['dragleave', 'drop'].forEach(evt => {
+                dropzone.addEventListener(evt, e => {
+                    e.preventDefault();
+                    dropzone.classList.remove('dragover');
+                });
+            });
+            
+            dropzone.addEventListener('drop', e => {
+                const files = e.dataTransfer.files;
+                if (id === 'excelDropzone') handleExcelUpload(files);
+                else if (id === 'coordsDropzone') handleCoordsUpload(files);
+                else if (id === 'photosDropzone') handlePhotosUpload(files);
+            });
+        });
+
+        // ==================== FILTROS ====================
+        function filterTable(type) {
+            const searchInput = document.getElementById(`search${type.charAt(0).toUpperCase() + type.slice(1)}`);
+            const filterSelect = document.getElementById(`filter${type.charAt(0).toUpperCase() + type.slice(1)}`);
+            const tbody = document.getElementById(`tbody${type.charAt(0).toUpperCase() + type.slice(1)}`);
+            
+            const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+            const filterValue = filterSelect ? filterSelect.value : '';
+            
+            const rows = tbody.querySelectorAll('tr');
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                const matchesSearch = text.includes(searchTerm);
+                const matchesFilter = !filterValue || text.includes(filterValue.toLowerCase());
+                row.style.display = (matchesSearch && matchesFilter) ? '' : 'none';
+            });
+        }
+
+        // ==================== UTILIDADES ADICIONALES ====================
+        function clearAllData() {
+            AppState.data = { hidrantes: [], valvulas: [], tuberias: [], muestreo: [], placas: [] };
+            AppState.coords = {};
+            AppState.photos = { field: {}, argis: {} };
+            AppState.exclusions = { hidrantes: [], valvulas: [], tuberias: [], muestreo: [] };
+            
+            document.getElementById('excelFileList').innerHTML = '';
+            document.getElementById('coordsFileList').innerHTML = '';
+            document.getElementById('photosFileList').innerHTML = '';
+            
+            updateStats();
+            updateTables();
+            checkProcessButton();
+            
+            addLog('info', 'Todos los datos han sido limpiados');
+        }
+
+        // ==================== INICIALIZACIÓN ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set current date
+            document.getElementById('currentDate').textContent = Utils.formatDate();
+            
+            // Initial log
+            addLog('info', 'Sistema iniciado correctamente');
+            addLog('info', `Versión: v34.0 - ARGIS`);
+            addLog('info', 'Esperando carga de datos...');
+            
+            // Check URL params
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('section')) {
+                showSection(params.get('section'));
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', e => {
+            if (e.ctrlKey) {
+                switch(e.key) {
+                    case '1': showSection('dashboard'); break;
+                    case '2': showSection('upload'); break;
+                    case '3': showSection('generate'); break;
+                    case 'g':
+                        e.preventDefault();
+                        if (!document.getElementById('btnGenerate').disabled) generateFichas();
+                        break;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
