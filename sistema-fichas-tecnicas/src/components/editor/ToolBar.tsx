@@ -18,6 +18,7 @@ import { useRouter } from 'next/navigation';
 import type { FichaStore } from '@/stores/fichaStore';
 import type { Pozo } from '@/types/pozo';
 import { ScopeIndicator } from './ScopeIndicator';
+import { getFieldValueOrDefault } from '@/lib/helpers/fieldValueHelpers';
 import { GuidedModeBadge } from '@/components/guided';
 
 interface ToolBarProps {
@@ -164,7 +165,7 @@ export function ToolBar({
           {/* Title and context */}
           <div className="flex items-center gap-3 min-w-0">
             <h1 className="text-lg font-semibold text-gray-800 truncate">
-              Editando: <span className="text-primary">{pozo.idPozo}</span>
+              Editando: <span className="text-primary">{getFieldValueOrDefault(pozo.idPozo)}</span>
             </h1>
             
             {/* Sync indicator */}

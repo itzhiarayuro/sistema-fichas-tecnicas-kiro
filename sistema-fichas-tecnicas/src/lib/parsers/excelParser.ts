@@ -68,6 +68,9 @@ const COLUMN_MAPPING: Record<string, string> = {
   'nro': 'idPozo',
   'n°': 'idPozo',
   'no.': 'idPozo',
+  'idpozo': 'idPozo',
+  'nombre': 'idPozo',
+  'id_pozo': 'idPozo',
   
   // Coordenada X (Longitud)
   'coordenada_x': 'coordenadaX',
@@ -127,6 +130,7 @@ const COLUMN_MAPPING: Record<string, string> = {
   'domicilio': 'direccion',
   'calle': 'direccion',
   'address': 'direccion',
+  'location': 'direccion',
   
   // Barrio
   'barrio': 'barrio',
@@ -163,6 +167,7 @@ const COLUMN_MAPPING: Record<string, string> = {
   'tipo_sistema': 'sistema',
   'tipo sistema': 'sistema',
   'sistema_alcantarillado': 'sistema',
+  'tipo': 'sistema',
   
   // Año de instalación
   'ano_instalacion': 'anoInstalacion',
@@ -171,6 +176,10 @@ const COLUMN_MAPPING: Record<string, string> = {
   'ano instalacion': 'anoInstalacion',
   'year': 'anoInstalacion',
   'instalacion': 'anoInstalacion',
+  'ano_de_instalacion': 'anoInstalacion',
+  'año de instalacion': 'anoInstalacion',
+  'año de instalación': 'anoInstalacion',
+  'ano_de_instalacion': 'anoInstalacion',
   
   // Tipo de cámara
   'tipo_camara': 'tipoCamara',
@@ -179,6 +188,7 @@ const COLUMN_MAPPING: Record<string, string> = {
   'tipo cámara': 'tipoCamara',
   'camara': 'tipoCamara',
   'cámara': 'tipoCamara',
+  'tipo_camara': 'tipoCamara',
   
   // Estructura de pavimento
   'estructura_pavimento': 'estructuraPavimento',
@@ -187,6 +197,9 @@ const COLUMN_MAPPING: Record<string, string> = {
   'tipo_pavimento': 'estructuraPavimento',
   'tipo pavimento': 'estructuraPavimento',
   'superficie': 'estructuraPavimento',
+  'estructura_de_pavimento': 'estructuraPavimento',
+  'estructura de pavimento': 'estructuraPavimento',
+  'estructura_de_pavimento': 'estructuraPavimento',
   
   // Existe tapa
   'existe_tapa': 'existeTapa',
@@ -195,6 +208,7 @@ const COLUMN_MAPPING: Record<string, string> = {
   'tiene_tapa': 'existeTapa',
   'tiene tapa': 'existeTapa',
   'has_cover': 'existeTapa',
+  'existe_tapa': 'existeTapa',
   
   // Material tapa
   'material_tapa': 'materialTapa',
@@ -202,6 +216,7 @@ const COLUMN_MAPPING: Record<string, string> = {
   'tapa_material': 'materialTapa',
   'tapa material': 'materialTapa',
   'mat_tapa': 'materialTapa',
+  'material_tapa': 'materialTapa',
   
   // Estado tapa
   'estado_tapa': 'estadoTapa',
@@ -210,6 +225,7 @@ const COLUMN_MAPPING: Record<string, string> = {
   'tapa estado': 'estadoTapa',
   'cond_tapa': 'estadoTapa',
   'condicion_tapa': 'estadoTapa',
+  'estado_tapa': 'estadoTapa',
   
   // Existe cono
   'existe_cono': 'existeCono',
@@ -218,12 +234,14 @@ const COLUMN_MAPPING: Record<string, string> = {
   'tiene_cono': 'existeCono',
   'tiene cono': 'existeCono',
   'has_cone': 'existeCono',
+  'existe_cono': 'existeCono',
   
   // Tipo cono
   'tipo_cono': 'tipoCono',
   'tipo cono': 'tipoCono',
   'cono_tipo': 'tipoCono',
   'cono tipo': 'tipoCono',
+  'tipo_cono': 'tipoCono',
   
   // Material cono
   'material_cono': 'materialCono',
@@ -232,6 +250,7 @@ const COLUMN_MAPPING: Record<string, string> = {
   'cono material': 'materialCono',
   'materia_cono': 'materialCono',
   'materia cono': 'materialCono',
+  'materia_cono': 'materialCono',
   
   // Estado cono
   'estado_cono': 'estadoCono',
@@ -239,6 +258,7 @@ const COLUMN_MAPPING: Record<string, string> = {
   'cono_estado': 'estadoCono',
   'cono estado': 'estadoCono',
   'condicion_cono': 'estadoCono',
+  'estado_cono': 'estadoCono',
   
   // Existe cilindro
   'existe_cilindro': 'existeCilindro',
@@ -247,6 +267,7 @@ const COLUMN_MAPPING: Record<string, string> = {
   'tiene_cilindro': 'existeCilindro',
   'tiene cilindro': 'existeCilindro',
   'has_cylinder': 'existeCilindro',
+  'existe_cilindro': 'existeCilindro',
   
   // Diámetro cilindro
   'diametro_cilindro': 'diametroCilindro',
@@ -256,12 +277,17 @@ const COLUMN_MAPPING: Record<string, string> = {
   'cilindro_diametro': 'diametroCilindro',
   'cilindro diametro': 'diametroCilindro',
   'd_cilindro': 'diametroCilindro',
+  'diametro_cilindro__m_': 'diametroCilindro',
+  'diametro cilindro (m)': 'diametroCilindro',
+  'diámetro cilindro (m)': 'diametroCilindro',
+  'diametro_cilindro_m': 'diametroCilindro',
   
   // Material cilindro
   'material_cilindro': 'materialCilindro',
   'material cilindro': 'materialCilindro',
   'cilindro_material': 'materialCilindro',
   'cilindro material': 'materialCilindro',
+  'material_cilindro': 'materialCilindro',
   
   // Estado cilindro
   'estado_cilindro': 'estadoCilindro',
@@ -269,6 +295,7 @@ const COLUMN_MAPPING: Record<string, string> = {
   'cilindro_estado': 'estadoCilindro',
   'cilindro estado': 'estadoCilindro',
   'condicion_cilindro': 'estadoCilindro',
+  'estado_cilindro': 'estadoCilindro',
   
   // Existe cañuela
   'existe_canuela': 'existeCanuela',
@@ -279,6 +306,7 @@ const COLUMN_MAPPING: Record<string, string> = {
   'cañuela': 'existeCanuela',
   'tiene_canuela': 'existeCanuela',
   'tiene canuela': 'existeCanuela',
+  'existe_canuela': 'existeCanuela',
   
   // Material cañuela
   'material_canuela': 'materialCanuela',
@@ -287,6 +315,7 @@ const COLUMN_MAPPING: Record<string, string> = {
   'material cañuela': 'materialCanuela',
   'canuela_material': 'materialCanuela',
   'cañuela_material': 'materialCanuela',
+  'material_canuela': 'materialCanuela',
   
   // Estado cañuela
   'estado_canuela': 'estadoCanuela',
@@ -309,6 +338,7 @@ const COLUMN_MAPPING: Record<string, string> = {
   'tiene_peldaños': 'existePeldanos',
   'tiene peldaños': 'existePeldanos',
   'has_steps': 'existePeldanos',
+  'existe_peldanos': 'existePeldanos',
   
   // Material peldaños
   'material_peldanos': 'materialPeldanos',
@@ -317,6 +347,7 @@ const COLUMN_MAPPING: Record<string, string> = {
   'material peldaños': 'materialPeldanos',
   'peldanos_material': 'materialPeldanos',
   'peldaños_material': 'materialPeldanos',
+  'material_peldanos': 'materialPeldanos',
   
   // Número de peldaños
   'numero_peldanos': 'numeroPeldanos',
@@ -339,6 +370,7 @@ const COLUMN_MAPPING: Record<string, string> = {
   'num peldanos': 'numeroPeldanos',
   'n_peldanos': 'numeroPeldanos',
   'count_steps': 'numeroPeldanos',
+  'numero_peldanos': 'numeroPeldanos',
   
   // Estado peldaños
   'estado_peldanos': 'estadoPeldanos',
@@ -349,6 +381,7 @@ const COLUMN_MAPPING: Record<string, string> = {
   'peldaños_estado': 'estadoPeldanos',
   'condicion_peldanos': 'estadoPeldanos',
   'condicion_peldaños': 'estadoPeldanos',
+  'estado_peldanos': 'estadoPeldanos',
   
   // ============================================================================
   // OBSERVACIONES (1 campo opcional)
@@ -367,9 +400,10 @@ const COLUMN_MAPPING: Record<string, string> = {
 
 /**
  * Columnas requeridas para crear un pozo válido
- * Según diccionario: 6 campos obligatorios
+ * Solo el ID del pozo es realmente obligatorio - los demás son opcionales
+ * para permitir flexibilidad en los archivos Excel de entrada
  */
-const REQUIRED_COLUMNS = ['idPozo', 'coordenadaX', 'coordenadaY', 'fecha', 'levanto', 'estado'];
+const REQUIRED_COLUMNS = ['idPozo'];
 
 /**
  * Campos esperados para estadísticas (todos los 33 campos del diccionario)
@@ -404,6 +438,41 @@ function normalizeColumnName(name: string): string {
     .replace(/[\u0300-\u036f]/g, '') // Elimina acentos
     .replace(/\s+/g, '_')
     .replace(/[^a-z0-9_]/g, '');
+}
+
+/**
+ * Genera variaciones del nombre de un campo para búsqueda directa
+ * Útil cuando el mapeo de columnas no encuentra el campo
+ */
+function getFieldVariations(field: string): string[] {
+  const variations: string[] = [field];
+  
+  // Mapeo de campos internos a posibles nombres en Excel
+  const fieldToExcelNames: Record<string, string[]> = {
+    'idPozo': ['Id_pozo', 'ID_POZO', 'Codigo', 'Código', 'codigo', 'CODIGO', 'Id', 'ID', 'Pozo', 'POZO'],
+    'direccion': ['Dirección', 'Direccion', 'DIRECCION', 'direccion', 'Dir', 'Ubicacion', 'Ubicación'],
+    'barrio': ['Barrio', 'BARRIO', 'Sector', 'SECTOR', 'Zona', 'ZONA'],
+    'sistema': ['Sistema', 'SISTEMA', 'Red', 'RED', 'Tipo'],
+    'estado': ['Estado', 'ESTADO', 'Condicion', 'Condición'],
+    'fecha': ['Fecha', 'FECHA', 'Date', 'Fecha_inspeccion', 'Fecha Inspección'],
+    'levanto': ['Levantó', 'Levanto', 'LEVANTO', 'Inspector', 'INSPECTOR', 'Responsable'],
+    'coordenadaX': ['Coordenada X', 'Coordenada_X', 'COORDENADA_X', 'Longitud', 'X', 'Lon'],
+    'coordenadaY': ['Coordenada Y', 'Coordenada_Y', 'COORDENADA_Y', 'Latitud', 'Y', 'Lat'],
+    'elevacion': ['Elevación', 'Elevacion', 'ELEVACION', 'Elev', 'Altura_snm'],
+    'profundidad': ['Profundidad', 'PROFUNDIDAD', 'Prof', 'Depth', 'H', 'Altura'],
+    'existeTapa': ['Existe tapa', 'Existe_tapa', 'EXISTE_TAPA', 'Tapa'],
+    'estadoTapa': ['Estado tapa', 'Estado_tapa', 'ESTADO_TAPA'],
+    'materialTapa': ['Material tapa', 'Material_tapa', 'MATERIAL_TAPA'],
+    'existeCilindro': ['Existe Cilindro', 'Existe_Cilindro', 'EXISTE_CILINDRO', 'Cilindro'],
+    'diametroCilindro': ['Diametro Cilindro (m)', 'Diametro_Cilindro', 'DIAMETRO_CILINDRO', 'Diámetro Cilindro'],
+    'observaciones': ['Observaciones', 'OBSERVACIONES', 'Notas', 'Comentarios'],
+  };
+  
+  if (fieldToExcelNames[field]) {
+    variations.push(...fieldToExcelNames[field]);
+  }
+  
+  return variations;
 }
 
 /**
@@ -542,7 +611,17 @@ const PREDEFINED_VALUES = {
   estado: ['Bueno', 'Regular', 'Malo', 'Muy Malo', 'No Aplica'],
   materialTuberia: ['PVC', 'GRES', 'Concreto', 'Hierro Fundido', 'Polietileno'],
   materialComponente: ['Concreto', 'Hierro', 'Hierro Fundido', 'Ladrillo', 'Mixto'],
-  tipoCamara: ['Circular', 'Rectangular', 'Cuadrada'],
+  tipoCamara: [
+    'TÍPICA DE FONDO DE CAÍDA',
+    'CON COLCHÓN',
+    'CON ALIVIADERO VERTEDERO SIMPLE',
+    'CON ALIVIADERO VERTEDERO DOBLE',
+    'CON ALIVIADERO DE SALTO',
+    'CON ALIVIADERO DE BARRERA',
+    'CON ALIVIADERO LATERAL DOBLE',
+    'CON ALIVIADERO LATERAL SENCILLO',
+    'CON ALIVIADERO ORIFICIO',
+  ],
   tipoTuberia: ['entrada', 'salida'],
   tipoSumidero: ['Rejilla', 'Buzón', 'Combinado', 'Lateral'],
   booleano: ['Sí', 'No', 'Si', 'No', 'Yes', 'No', 'true', 'false', '1', '0'],
@@ -753,16 +832,43 @@ function parseRow(
   }
   
   /**
-   * Obtiene el valor de un campo con fallback a string vacío
+   * Obtiene el MEJOR valor no vacío de un campo
+   * Busca en TODAS las columnas que mapean al campo y retorna el primer valor no vacío
+   * Esto soluciona el problema de columnas vacías que "ocultan" datos válidos
    */
   const getValue = (field: string): string => {
+    let bestValue = '';
+    
+    // Buscar en todas las columnas que mapean a este campo
     for (const [col, mapped] of Object.entries(columnMapping)) {
       if (mapped === field) {
         const rawValue = row[col];
-        return safeStringValue(rawValue);
+        const stringValue = safeStringValue(rawValue);
+        
+        // Si encontramos un valor no vacío, usarlo
+        if (stringValue && stringValue.trim() !== '') {
+          bestValue = stringValue;
+          break; // Usar el primer valor no vacío encontrado
+        }
       }
     }
-    return '';
+    
+    // Si no encontramos en el mapeo, buscar directamente en la fila
+    // usando variaciones del nombre del campo
+    if (!bestValue) {
+      const fieldVariations = getFieldVariations(field);
+      for (const variation of fieldVariations) {
+        if (row[variation] !== undefined) {
+          const stringValue = safeStringValue(row[variation]);
+          if (stringValue && stringValue.trim() !== '') {
+            bestValue = stringValue;
+            break;
+          }
+        }
+      }
+    }
+    
+    return bestValue;
   };
   
   // ============================================================================
@@ -781,9 +887,12 @@ function parseRow(
     return null;
   }
   
+  // Campos opcionales - obtener valores con fallback a vacío
   const fecha = getValue('fecha');
-  const fechaNormalizada = normalizeDateValue(fecha);
-  if (!isValidDate(fechaNormalizada)) {
+  const fechaNormalizada = fecha ? normalizeDateValue(fecha) : '';
+  
+  // Solo advertir si la fecha se proporcionó pero es inválida
+  if (fecha && fechaNormalizada && !isValidDate(fechaNormalizada)) {
     result.parseErrors.push({
       type: ErrorType.DATA,
       severity: ErrorSeverity.WARNING,
@@ -793,32 +902,14 @@ function parseRow(
       field: 'fecha',
       value: fecha,
     });
-    return null;
+    // No retornar null - la fecha es opcional
   }
   
   const levanto = getValue('levanto');
-  if (!levanto) {
-    result.parseErrors.push({
-      type: ErrorType.DATA,
-      severity: ErrorSeverity.WARNING,
-      message: `Row ${index + 2}: Missing required field levanto`,
-      userMessage: `Fila ${index + 2}: Falta el inspector (levantó)`,
-      row: index + 2,
-    });
-    return null;
-  }
+  // levanto es opcional - no rechazar si falta
   
   const estado = getValue('estado');
-  if (!estado) {
-    result.parseErrors.push({
-      type: ErrorType.DATA,
-      severity: ErrorSeverity.WARNING,
-      message: `Row ${index + 2}: Missing required field estado`,
-      userMessage: `Fila ${index + 2}: Falta el estado del pozo`,
-      row: index + 2,
-    });
-    return null;
-  }
+  // estado es opcional - no rechazar si falta
   
   // ============================================================================
   // VALIDACIÓN DE COORDENADAS (OPCIONALES PERO SI SE PROPORCIONAN DEBEN SER VÁLIDAS)
@@ -913,11 +1004,12 @@ function parseRow(
   // ============================================================================
   
   if (estado && !isValidPredefinedValue(estado, PREDEFINED_VALUES.estado)) {
+    // Solo advertir, no rechazar - el valor se usará de todas formas
     result.parseErrors.push({
       type: ErrorType.DATA,
       severity: ErrorSeverity.WARNING,
       message: `Row ${index + 2}: Invalid estado value`,
-      userMessage: `Fila ${index + 2}: Estado debe ser uno de: ${PREDEFINED_VALUES.estado.join(', ')}`,
+      userMessage: `Fila ${index + 2}: Estado "${estado}" no es un valor estándar (${PREDEFINED_VALUES.estado.join(', ')})`,
       row: index + 2,
       field: 'estado',
       value: estado,
@@ -967,6 +1059,7 @@ function parseRow(
   
   // ============================================================================
   // CONSTRUCCIÓN DEL OBJETO POZO CON TODOS LOS 33 CAMPOS
+  // Estructura PLANA según el tipo Pozo definido en types/pozo.ts
   // ============================================================================
   
   // Generar ID único para el pozo
@@ -974,50 +1067,60 @@ function parseRow(
   
   const pozo: Pozo = {
     id: uniqueId,
-    identificacion: {
-      idPozo: { value: idPozo, source: 'excel' },
-      coordenadaX: { value: coordenadaX, source: 'excel' },
-      coordenadaY: { value: coordenadaY, source: 'excel' },
-      fecha: { value: fechaNormalizada, source: 'excel' },
-      levanto: { value: levanto, source: 'excel' },
-      estado: { value: estado, source: 'excel' },
+    
+    // ========== IDENTIFICACIÓN (6 campos) ==========
+    idPozo: { value: idPozo, source: 'excel' },
+    coordenadaX: { value: coordenadaX, source: 'excel' },
+    coordenadaY: { value: coordenadaY, source: 'excel' },
+    fecha: { value: fechaNormalizada, source: 'excel' },
+    levanto: { value: levanto, source: 'excel' },
+    estado: { value: estado, source: 'excel' },
+    
+    // ========== UBICACIÓN (4 campos) ==========
+    direccion: { value: getValue('direccion'), source: 'excel' },
+    barrio: { value: getValue('barrio'), source: 'excel' },
+    elevacion: { value: elevacion, source: 'excel' },
+    profundidad: { value: profundidad, source: 'excel' },
+    
+    // ========== COMPONENTES (23 campos) ==========
+    existeTapa: { value: existeTapa, source: 'excel' },
+    estadoTapa: { value: estadoTapa, source: 'excel' },
+    existeCilindro: { value: existeCilindro, source: 'excel' },
+    diametroCilindro: { value: diametroCilindro, source: 'excel' },
+    sistema: { value: getValue('sistema'), source: 'excel' },
+    anoInstalacion: { value: getValue('anoInstalacion'), source: 'excel' },
+    tipoCamara: { value: getValue('tipoCamara'), source: 'excel' },
+    estructuraPavimento: { value: getValue('estructuraPavimento'), source: 'excel' },
+    materialTapa: { value: getValue('materialTapa'), source: 'excel' },
+    existeCono: { value: getValue('existeCono'), source: 'excel' },
+    tipoCono: { value: getValue('tipoCono'), source: 'excel' },
+    materialCono: { value: getValue('materialCono'), source: 'excel' },
+    estadoCono: { value: getValue('estadoCono'), source: 'excel' },
+    materialCilindro: { value: getValue('materialCilindro'), source: 'excel' },
+    estadoCilindro: { value: getValue('estadoCilindro'), source: 'excel' },
+    existeCanuela: { value: getValue('existeCanuela'), source: 'excel' },
+    materialCanuela: { value: getValue('materialCanuela'), source: 'excel' },
+    estadoCanuela: { value: getValue('estadoCanuela'), source: 'excel' },
+    existePeldanos: { value: existePeldanos, source: 'excel' },
+    materialPeldanos: { value: getValue('materialPeldanos'), source: 'excel' },
+    numeroPeldanos: { value: numeroPeldanos, source: 'excel' },
+    estadoPeldanos: { value: getValue('estadoPeldanos'), source: 'excel' },
+    
+    // ========== OBSERVACIONES (1 campo) ==========
+    observaciones: { value: getValue('observaciones'), source: 'excel' },
+    
+    // ========== RELACIONES ==========
+    tuberias: [],
+    sumideros: [],
+    fotos: {
+      principal: [],
+      entradas: [],
+      salidas: [],
+      sumideros: [],
+      otras: [],
     },
-    ubicacion: {
-      direccion: { value: getValue('direccion'), source: 'excel' },
-      barrio: { value: getValue('barrio'), source: 'excel' },
-      elevacion: { value: elevacion, source: 'excel' },
-      profundidad: { value: profundidad, source: 'excel' },
-    },
-    componentes: {
-      existeTapa: { value: existeTapa, source: 'excel' },
-      estadoTapa: { value: estadoTapa, source: 'excel' },
-      existeCilindro: { value: existeCilindro, source: 'excel' },
-      diametroCilindro: { value: diametroCilindro, source: 'excel' },
-      sistema: { value: getValue('sistema'), source: 'excel' },
-      anoInstalacion: { value: getValue('anoInstalacion'), source: 'excel' },
-      tipoCamara: { value: getValue('tipoCamara'), source: 'excel' },
-      estructuraPavimento: { value: getValue('estructuraPavimento'), source: 'excel' },
-      materialTapa: { value: getValue('materialTapa'), source: 'excel' },
-      existeCono: { value: getValue('existeCono'), source: 'excel' },
-      tipoCono: { value: getValue('tipoCono'), source: 'excel' },
-      materialCono: { value: getValue('materialCono'), source: 'excel' },
-      estadoCono: { value: getValue('estadoCono'), source: 'excel' },
-      materialCilindro: { value: getValue('materialCilindro'), source: 'excel' },
-      estadoCilindro: { value: getValue('estadoCilindro'), source: 'excel' },
-      existeCanuela: { value: getValue('existeCanuela'), source: 'excel' },
-      materialCanuela: { value: getValue('materialCanuela'), source: 'excel' },
-      estadoCanuela: { value: getValue('estadoCanuela'), source: 'excel' },
-      existePeldanos: { value: existePeldanos, source: 'excel' },
-      materialPeldanos: { value: getValue('materialPeldanos'), source: 'excel' },
-      numeroPeldanos: { value: numeroPeldanos, source: 'excel' },
-      estadoPeldanos: { value: getValue('estadoPeldanos'), source: 'excel' },
-    },
-    observaciones: {
-      observaciones: { value: getValue('observaciones'), source: 'excel' },
-    },
-    tuberias: { tuberias: [] },
-    sumideros: { sumideros: [] },
-    fotos: { fotos: [] },
+    
+    // ========== METADATOS ==========
     metadata: createDefaultMetadata(),
   };
   

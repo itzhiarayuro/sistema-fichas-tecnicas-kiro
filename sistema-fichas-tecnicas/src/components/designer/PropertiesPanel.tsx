@@ -14,7 +14,7 @@
 
 import { useState, useEffect } from 'react';
 import { useDesignStore } from '@/stores';
-import type { FichaDesign, FieldPlacement } from '@/types';
+import type { FichaDesign, FieldPlacement, GeometricShape, DesignImage } from '@/types';
 
 interface PropertiesPanelProps {
   design: FichaDesign;
@@ -26,18 +26,406 @@ export function PropertiesPanel({ design }: PropertiesPanelProps) {
   
   const selectedFieldId = editorState?.selectedFieldId;
   const selectedField = design.fieldPlacements.find((f) => f.id === selectedFieldId);
+  const selectedShape = design.shapes.find((s) => s.id === selectedFieldId);
+  const selectedImage = (design.images || []).find((i) => i.id === selectedFieldId);
   
   const [localField, setLocalField] = useState<FieldPlacement | null>(selectedField || null);
+  const [localShape, setLocalShape] = useState<GeometricShape | null>(selectedShape || null);
+  const [localImage, setLocalImage] = useState<DesignImage | null>(selectedImage || null);
   
   // Sincronizar cuando cambia la selección
   useEffect(() => {
     setLocalField(selectedField || null);
-  }, [selectedFieldId, selectedField]);
+    setLocalShape(selectedShape || null);
+    setLocalImage(selectedImage || null);
+  }, [selectedFieldId, selectedField, selectedShape, selectedImage]);
   
-  if (!localField) {
+  if (!localField && !localShape) {
     return (
       <div className="p-6 text-center text-gray-500">
-        <p className="text-sm">Selecciona un campo para editar</p>
+        <p className="text-sm">Selecciona un campo o figura para editar</p>
+      </div>
+    );
+  }
+  
+  // Si es una figura, mostrar panel de figura
+  if (localShape && !localField) {
+    return (
+      <div className="flex flex-col h-full">
+        {/* Header */}
+        <div className="p-4 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900">Propiedades de Figura</h2>
+          <p className="text-sm text-gray-600 mt-1 capitalize">{localShape.type}</p>
+        </div>
+        
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          {/* Posición */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">Posición</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">X (px)</label>
+                <input
+                  type="number"
+                  value={Math.round(localShape.position.x)}
+                  onChange={(e) => setLocalShape({ ...localShape, position: { ...localShape.position, x: parseFloat(e.target.value) } })}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Y (px)</label>
+                <input
+                  type="number"
+                  value={Math.round(localShape.position.y)}
+                  onChange={(e) => setLocalShape({ ...localShape, position: { ...localShape.position, y: parseFloat(e.target.value) } })}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+            </div>
+          </div>
+          
+          {/* Tamaño */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">Tamaño</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Ancho (px)</label>
+                <input
+                  type="number"
+                  value={Math.round(localShape.position.width)}
+                  onChange={(e) => setLocalShape({ ...localShape, position: { ...localShape.position, width: parseFloat(e.target.value) } })}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Alto (px)</label>
+                <input
+                  type="number"
+                  value={Math.round(localShape.position.height)}
+                  onChange={(e) => setLocalShape({ ...localShape, position: { ...localShape.position, height: parseFloat(e.target.value) } })}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+            </div>
+          </div>
+          
+          {/* Estilos */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">Estilos</h3>
+            <div className="space-y-3">
+              {/* Fill Color */}
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Color de Relleno</label>
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    value={localShape.style.fillColor}
+                    onChange={(e) => setLocalShape({ ...localShape, style: { ...localShape.style, fillColor: e.target.value } })}
+                    className="w-10 h-8 border border-gray-300 rounded cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={localShape.style.fillColor}
+                    onChange={(e) => setLocalShape({ ...localShape, style: { ...localShape.style, fillColor: e.target.value } })}
+                    className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+              </div>
+              
+              {/* Stroke Color */}
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Color de Borde</label>
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    value={localShape.style.strokeColor}
+                    onChange={(e) => setLocalShape({ ...localShape, style: { ...localShape.style, strokeColor: e.target.value } })}
+                    className="w-10 h-8 border border-gray-300 rounded cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={localShape.style.strokeColor}
+                    onChange={(e) => setLocalShape({ ...localShape, style: { ...localShape.style, strokeColor: e.target.value } })}
+                    className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+              </div>
+              
+              {/* Stroke Width */}
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Grosor de Borde (px)</label>
+                <input
+                  type="number"
+                  value={localShape.style.strokeWidth}
+                  onChange={(e) => setLocalShape({ ...localShape, style: { ...localShape.style, strokeWidth: parseFloat(e.target.value) } })}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+              
+              {/* Opacity */}
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Opacidad (0-1)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value={localShape.style.opacity}
+                  onChange={(e) => setLocalShape({ ...localShape, style: { ...localShape.style, opacity: parseFloat(e.target.value) } })}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+            </div>
+          </div>
+          
+          {/* Z-Index */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Orden (Z-Index)</label>
+            <input
+              type="number"
+              value={localShape.zIndex}
+              onChange={(e) => setLocalShape({ ...localShape, zIndex: parseInt(e.target.value) })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+          
+          {/* Visibilidad */}
+          <div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={localShape.visible}
+                onChange={(e) => setLocalShape({ ...localShape, visible: e.target.checked })}
+                className="rounded border-gray-300"
+              />
+              <span className="text-sm font-medium text-gray-700">Visible</span>
+            </label>
+          </div>
+          
+          {/* Bloqueado */}
+          <div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={localShape.locked}
+                onChange={(e) => setLocalShape({ ...localShape, locked: e.target.checked })}
+                className="rounded border-gray-300"
+              />
+              <span className="text-sm font-medium text-gray-700">Bloqueado</span>
+            </label>
+          </div>
+        </div>
+        
+        {/* Footer */}
+        <div className="p-4 border-t border-gray-200 space-y-2">
+          <button
+            onClick={() => {
+              const updatedShapes = design.shapes.map((s) =>
+                s.id === localShape.id ? localShape : s
+              );
+              updateDesign(design.id, {
+                shapes: updatedShapes,
+                updatedAt: Date.now(),
+              });
+            }}
+            className="w-full px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors text-sm font-medium"
+          >
+            Guardar Cambios
+          </button>
+          <button
+            onClick={() => {
+              const updatedShapes = design.shapes.filter((s) => s.id !== localShape.id);
+              updateDesign(design.id, {
+                shapes: updatedShapes,
+                updatedAt: Date.now(),
+              });
+              useDesignStore.setState((state) => ({
+                editorState: state.editorState ? { ...state.editorState, selectedFieldId: null } : null,
+              }));
+            }}
+            className="w-full px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium"
+          >
+            Eliminar Figura
+          </button>
+        </div>
+      </div>
+    );
+  }
+  
+  // Si es una imagen, mostrar panel de imagen
+  if (localImage && !localField && !localShape) {
+    return (
+      <div className="flex flex-col h-full">
+        {/* Header */}
+        <div className="p-4 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900">Propiedades de Imagen</h2>
+          <p className="text-sm text-gray-600 mt-1">{localImage.fileName}</p>
+        </div>
+        
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          {/* Preview */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Vista Previa</label>
+            <img
+              src={localImage.src}
+              alt={localImage.fileName}
+              className="w-full h-32 object-contain border border-gray-300 rounded-lg"
+            />
+          </div>
+          
+          {/* Posición */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">Posición</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">X (px)</label>
+                <input
+                  type="number"
+                  value={Math.round(localImage.position.x)}
+                  onChange={(e) => setLocalImage({ ...localImage, position: { ...localImage.position, x: parseFloat(e.target.value) } })}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Y (px)</label>
+                <input
+                  type="number"
+                  value={Math.round(localImage.position.y)}
+                  onChange={(e) => setLocalImage({ ...localImage, position: { ...localImage.position, y: parseFloat(e.target.value) } })}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+            </div>
+          </div>
+          
+          {/* Tamaño */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">Tamaño</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Ancho (px)</label>
+                <input
+                  type="number"
+                  value={Math.round(localImage.position.width)}
+                  onChange={(e) => setLocalImage({ ...localImage, position: { ...localImage.position, width: parseFloat(e.target.value) } })}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Alto (px)</label>
+                <input
+                  type="number"
+                  value={Math.round(localImage.position.height)}
+                  onChange={(e) => setLocalImage({ ...localImage, position: { ...localImage.position, height: parseFloat(e.target.value) } })}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+            </div>
+          </div>
+          
+          {/* Estilos */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">Estilos</h3>
+            <div className="space-y-3">
+              {/* Opacidad */}
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Opacidad (0-1)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value={localImage.style.opacity}
+                  onChange={(e) => setLocalImage({ ...localImage, style: { ...localImage.style, opacity: parseFloat(e.target.value) } })}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+              
+              {/* Rotación */}
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Rotación (grados)</label>
+                <input
+                  type="number"
+                  value={localImage.style.rotation}
+                  onChange={(e) => setLocalImage({ ...localImage, style: { ...localImage.style, rotation: parseFloat(e.target.value) } })}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+            </div>
+          </div>
+          
+          {/* Z-Index */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Orden (Z-Index)</label>
+            <input
+              type="number"
+              value={localImage.zIndex}
+              onChange={(e) => setLocalImage({ ...localImage, zIndex: parseInt(e.target.value) })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+          
+          {/* Visibilidad */}
+          <div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={localImage.visible}
+                onChange={(e) => setLocalImage({ ...localImage, visible: e.target.checked })}
+                className="rounded border-gray-300"
+              />
+              <span className="text-sm font-medium text-gray-700">Visible</span>
+            </label>
+          </div>
+          
+          {/* Bloqueado */}
+          <div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={localImage.locked}
+                onChange={(e) => setLocalImage({ ...localImage, locked: e.target.checked })}
+                className="rounded border-gray-300"
+              />
+              <span className="text-sm font-medium text-gray-700">Bloqueado</span>
+            </label>
+          </div>
+        </div>
+        
+        {/* Footer */}
+        <div className="p-4 border-t border-gray-200 space-y-2">
+          <button
+            onClick={() => {
+              const updatedImages = (design.images || []).map((img) =>
+                img.id === localImage.id ? localImage : img
+              );
+              updateDesign(design.id, {
+                images: updatedImages,
+                updatedAt: Date.now(),
+              });
+            }}
+            className="w-full px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors text-sm font-medium"
+          >
+            Guardar Cambios
+          </button>
+          <button
+            onClick={() => {
+              const updatedImages = (design.images || []).filter((img) => img.id !== localImage.id);
+              updateDesign(design.id, {
+                images: updatedImages,
+                updatedAt: Date.now(),
+              });
+              useDesignStore.setState((state) => ({
+                editorState: state.editorState ? { ...state.editorState, selectedFieldId: null } : null,
+              }));
+            }}
+            className="w-full px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium"
+          >
+            Eliminar Imagen
+          </button>
+        </div>
       </div>
     );
   }

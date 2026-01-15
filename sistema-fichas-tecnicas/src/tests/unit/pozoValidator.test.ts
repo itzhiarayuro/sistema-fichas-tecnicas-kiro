@@ -44,7 +44,7 @@ function createTestPozo(overrides?: Partial<Pozo>): Pozo {
       diametroCilindro: fv(''),
       sistema: fv('Sistema 1'),
       anoInstalacion: fv('2020'),
-      tipoCamara: fv('Circular'),
+      tipoCamara: fv('TÍPICA DE FONDO DE CAÍDA'),
       estructuraPavimento: fv('Asfalto'),
       materialTapa: fv('Hierro'),
       existeCono: fv('No'),
@@ -107,7 +107,7 @@ describe('Pozo Validator', () => {
       expect(result.errors.some(e => e.code === 'POZO_ID_REQUIRED')).toBe(true);
     });
 
-    it('should reject pozo with invalid date format', () => {
+    it('should warn when fecha has invalid format', () => {
       const pozo = createTestPozo({
         identificacion: {
           ...createTestPozo().identificacion,
@@ -116,11 +116,11 @@ describe('Pozo Validator', () => {
       });
       const result = validatePozo(pozo);
       
-      expect(result.isValid).toBe(false);
-      expect(result.errors.some(e => e.code === 'FECHA_INVALID_FORMAT')).toBe(true);
+      // Fecha inválida ahora es advertencia, no error
+      expect(result.warnings.some(w => w.code === 'FECHA_INVALID_FORMAT')).toBe(true);
     });
 
-    it('should reject pozo with missing fecha', () => {
+    it('should warn when fecha is missing', () => {
       const pozo = createTestPozo({
         identificacion: {
           ...createTestPozo().identificacion,
@@ -129,8 +129,8 @@ describe('Pozo Validator', () => {
       });
       const result = validatePozo(pozo);
       
-      expect(result.isValid).toBe(false);
-      expect(result.errors.some(e => e.code === 'FECHA_REQUIRED')).toBe(true);
+      // Fecha faltante ahora es advertencia, no error
+      expect(result.warnings.some(w => w.code === 'FECHA_EMPTY')).toBe(true);
     });
 
     it('should warn when levanto is empty', () => {
@@ -545,8 +545,7 @@ describe('Pozo Validator', () => {
         id: 'PZ2',
         identificacion: {
           ...createTestPozo().identificacion,
-          idPozo: fv('PZ2'),
-          fecha: fv('invalid'), // Invalid
+          idPozo: fv(''), // ID vacío es un error real
         },
       });
 

@@ -49,7 +49,7 @@ export function getPozoStatus(pozo: Pozo, fotosGlobales?: Map<string, any>): Poz
   }
   
   if (fotosCount === 0) {
-    issues.push('Sin fotos asociadas');
+    warnings.push('Sin fotos asociadas');
   }
   // Nota: Ya no requerimos foto principal específicamente
   
@@ -87,7 +87,7 @@ export function getPozoStatusDetails(pozo: Pozo, fotosGlobales?: Map<string, any
   }
   
   if (fotosCount === 0) {
-    issues.push('Sin fotos asociadas');
+    warnings.push('Sin fotos asociadas');
   }
   // Nota: Ya no requerimos foto principal específicamente
   

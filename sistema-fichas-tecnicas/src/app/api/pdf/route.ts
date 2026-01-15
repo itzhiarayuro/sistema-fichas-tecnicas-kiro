@@ -35,6 +35,25 @@ export async function POST(request: NextRequest) {
 
     const { ficha, pozo, options = {} } = body;
 
+    // Validar que haya fotos asociadas
+    const fotosCount = (
+      (pozo.fotos?.principal?.length || 0) +
+      (pozo.fotos?.entradas?.length || 0) +
+      (pozo.fotos?.salidas?.length || 0) +
+      (pozo.fotos?.sumideros?.length || 0) +
+      (pozo.fotos?.otras?.length || 0)
+    );
+
+    if (fotosCount === 0) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'No se puede generar PDF: la ficha no tiene fotos asociadas. Por favor, carga al menos una foto antes de generar el PDF.' 
+        },
+        { status: 400 }
+      );
+    }
+
     // Generar PDF
     const generator = new PDFGenerator();
     const result = await generator.generatePDF(ficha, pozo, options);

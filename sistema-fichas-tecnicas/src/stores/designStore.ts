@@ -23,6 +23,10 @@ interface DesignStoreState {
   // Diseño por defecto del sistema
   defaultDesignId: string | null;
   
+  // Undo/Redo history
+  undoStack: FichaDesign[];
+  redoStack: FichaDesign[];
+  
   // Acciones CRUD de diseños
   createDesign: (design: FichaDesign) => void;
   updateDesign: (id: string, updates: Partial<FichaDesign>) => void;
@@ -50,6 +54,13 @@ interface DesignStoreState {
   
   // Acciones de búsqueda
   searchDesigns: (query: string) => FichaDesign[];
+  
+  // Acciones de undo/redo
+  undo: () => void;
+  redo: () => void;
+  canUndo: () => boolean;
+  canRedo: () => boolean;
+  clearHistory: () => void;
   
   // Acciones de limpieza
   reset: () => void;
@@ -129,6 +140,7 @@ const createDefaultDesign = (): FichaDesign => ({
   },
   fieldPlacements: [],
   shapes: [],
+  images: [],
   metadata: {},
 });
 
@@ -140,6 +152,8 @@ export const useDesignStore = create<DesignStoreState>()(
       templates: new Map(),
       editorState: null,
       defaultDesignId: null,
+      undoStack: [],
+      redoStack: [],
       
       // CRUD actions
       createDesign: (design) => set((state) => {
@@ -152,6 +166,9 @@ export const useDesignStore = create<DesignStoreState>()(
         const design = state.designs.get(id);
         if (!design) return state;
         
+        // Guardar estado anterior en undo stack
+        const newUndoStack = [...state.undoStack, JSON.parse(JSON.stringify(design))];
+        
         const updated: FichaDesign = {
           ...design,
           ...updates,
@@ -160,7 +177,11 @@ export const useDesignStore = create<DesignStoreState>()(
         
         const newDesigns = new Map(state.designs);
         newDesigns.set(id, updated);
-        return { designs: newDesigns };
+        return {
+          designs: newDesigns,
+          undoStack: newUndoStack,
+          redoStack: [], // Limpiar redo stack cuando hay cambios
+        };
       }),
       
       deleteDesign: (id) => set((state) => {
@@ -346,12 +367,80 @@ export const useDesignStore = create<DesignStoreState>()(
         );
       },
       
+      // Undo/Redo actions
+      undo: () => set((state) => {
+        if (state.undoStack.length === 0) return state;
+        
+        // Obtener el último estado del undo stack
+        const previousDesign = state.undoStack[state.undoStack.length - 1];
+        const currentDesign = Array.from(state.designs.values()).find(
+          (d) => d.id === previousDesign.id
+        );
+        
+        if (!currentDesign) return state;
+        
+        // Mover estado actual a redo stack
+        const newRedoStack = [...state.redoStack, JSON.parse(JSON.stringify(currentDesign))];
+        
+        // Restaurar diseño anterior
+        const newDesigns = new Map(state.designs);
+        newDesigns.set(previousDesign.id, previousDesign);
+        
+        // Remover del undo stack
+        const newUndoStack = state.undoStack.slice(0, -1);
+        
+        return {
+          designs: newDesigns,
+          undoStack: newUndoStack,
+          redoStack: newRedoStack,
+        };
+      }),
+      
+      redo: () => set((state) => {
+        if (state.redoStack.length === 0) return state;
+        
+        // Obtener el último estado del redo stack
+        const nextDesign = state.redoStack[state.redoStack.length - 1];
+        const currentDesign = Array.from(state.designs.values()).find(
+          (d) => d.id === nextDesign.id
+        );
+        
+        if (!currentDesign) return state;
+        
+        // Mover estado actual a undo stack
+        const newUndoStack = [...state.undoStack, JSON.parse(JSON.stringify(currentDesign))];
+        
+        // Restaurar diseño siguiente
+        const newDesigns = new Map(state.designs);
+        newDesigns.set(nextDesign.id, nextDesign);
+        
+        // Remover del redo stack
+        const newRedoStack = state.redoStack.slice(0, -1);
+        
+        return {
+          designs: newDesigns,
+          undoStack: newUndoStack,
+          redoStack: newRedoStack,
+        };
+      }),
+      
+      canUndo: () => get().undoStack.length > 0,
+      
+      canRedo: () => get().redoStack.length > 0,
+      
+      clearHistory: () => set({
+        undoStack: [],
+        redoStack: [],
+      }),
+      
       // Reset
       reset: () => set({
         designs: new Map(),
         templates: new Map(),
         editorState: null,
         defaultDesignId: null,
+        undoStack: [],
+        redoStack: [],
       }),
     }),
     {

@@ -13,6 +13,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Pozo } from '@/types';
 import { PozoStatusBadge, getPozoStatus } from './PozoStatusBadge';
+import { getFieldValueOrDefault } from '@/lib/helpers/fieldValueHelpers';
 
 type SortField = 'codigo' | 'direccion' | 'barrio' | 'sistema' | 'estado' | 'fecha';
 type SortDirection = 'asc' | 'desc';
@@ -52,8 +53,10 @@ export function PozosTable({
     const estados = new Set<string>();
     
     pozos.forEach((pozo) => {
-      if (pozo.sistema) sistemas.add(pozo.sistema);
-      if (pozo.estado) estados.add(pozo.estado);
+      const sistema = getFieldValueOrDefault(pozo.sistema);
+      const estado = getFieldValueOrDefault(pozo.estado);
+      if (sistema) sistemas.add(sistema);
+      if (estado) estados.add(estado);
     });
     
     return {
@@ -68,20 +71,23 @@ export function PozosTable({
       // Search filter
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
+        const idPozo = getFieldValueOrDefault(pozo.idPozo).toLowerCase();
+        const direccion = getFieldValueOrDefault(pozo.direccion).toLowerCase();
+        const barrio = getFieldValueOrDefault(pozo.barrio).toLowerCase();
         const matchesSearch = 
-          pozo.idPozo.toLowerCase().includes(searchLower) ||
-          pozo.direccion.toLowerCase().includes(searchLower) ||
-          pozo.barrio.toLowerCase().includes(searchLower);
+          idPozo.includes(searchLower) ||
+          direccion.includes(searchLower) ||
+          barrio.includes(searchLower);
         if (!matchesSearch) return false;
       }
       
       // Sistema filter
-      if (filters.sistema && pozo.sistema !== filters.sistema) {
+      if (filters.sistema && getFieldValueOrDefault(pozo.sistema) !== filters.sistema) {
         return false;
       }
       
       // Estado filter
-      if (filters.estado && pozo.estado !== filters.estado) {
+      if (filters.estado && getFieldValueOrDefault(pozo.estado) !== filters.estado) {
         return false;
       }
       
@@ -338,20 +344,20 @@ export function PozosTable({
                   >
                     <td className="px-4 py-3">
                       <span className={`font-medium ${isSelected ? 'text-primary' : 'text-gray-900'}`}>
-                        {pozo.idPozo}
+                        {getFieldValueOrDefault(pozo.idPozo)}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-gray-700">
-                      {pozo.direccion || <span className="text-gray-400 italic">Sin dirección</span>}
+                      {getFieldValueOrDefault(pozo.direccion) || <span className="text-gray-400 italic">Sin dirección</span>}
                     </td>
                     <td className="px-4 py-3 text-gray-700">
-                      {pozo.barrio || <span className="text-gray-400 italic">-</span>}
+                      {getFieldValueOrDefault(pozo.barrio) || <span className="text-gray-400 italic">-</span>}
                     </td>
                     <td className="px-4 py-3 text-gray-700">
-                      {pozo.sistema || <span className="text-gray-400 italic">-</span>}
+                      {getFieldValueOrDefault(pozo.sistema) || <span className="text-gray-400 italic">-</span>}
                     </td>
                     <td className="px-4 py-3 text-gray-700">
-                      {pozo.estado || <span className="text-gray-400 italic">-</span>}
+                      {getFieldValueOrDefault(pozo.estado) || <span className="text-gray-400 italic">-</span>}
                     </td>
                     <td className="px-4 py-3">
                       <PozoStatusBadge pozo={pozo} />

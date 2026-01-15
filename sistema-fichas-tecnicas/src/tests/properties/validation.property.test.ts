@@ -118,7 +118,7 @@ function createPozoWithInvalidData(overrides?: Partial<Pozo>): Pozo {
       diametroCilindro: fv(''),
       sistema: fv('Sistema 1'),
       anoInstalacion: fv('2020'),
-      tipoCamara: fv('Circular'),
+      tipoCamara: fv('TÍPICA DE FONDO DE CAÍDA'),
       estructuraPavimento: fv('Asfalto'),
       materialTapa: fv('Hierro'),
       existeCono: fv('No'),

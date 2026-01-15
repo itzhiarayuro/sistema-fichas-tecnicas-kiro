@@ -44,6 +44,21 @@ export interface ValidationWarning {
 }
 
 /**
+ * Valores válidos para tipo de cámara
+ */
+const VALID_TIPO_CAMARA_VALUES = [
+  'TÍPICA DE FONDO DE CAÍDA',
+  'CON COLCHÓN',
+  'CON ALIVIADERO VERTEDERO SIMPLE',
+  'CON ALIVIADERO VERTEDERO DOBLE',
+  'CON ALIVIADERO DE SALTO',
+  'CON ALIVIADERO DE BARRERA',
+  'CON ALIVIADERO LATERAL DOBLE',
+  'CON ALIVIADERO LATERAL SENCILLO',
+  'CON ALIVIADERO ORIFICIO',
+];
+
+/**
  * Rango geográfico válido para Colombia (aproximado)
  */
 const GEOGRAPHIC_BOUNDS = {
@@ -170,29 +185,22 @@ function validateIdentificacion(pozo: Pozo, result: PozoValidationResult): void 
     result.fieldsWithIssues.push('idPozo');
   }
   
-  // Validar fecha
+  // Validar fecha - ahora es advertencia, no error
   const fecha = extractValue(identificacion.fecha);
   if (isEmpty(fecha)) {
-    result.errors.push({
-      code: 'FECHA_REQUIRED',
-      message: 'Inspection date is required',
-      userMessage: 'La fecha de inspección es obligatoria',
-      type: ErrorType.DATA,
-      severity: ErrorSeverity.ERROR,
+    result.warnings.push({
+      code: 'FECHA_EMPTY',
+      message: 'Inspection date is empty',
+      userMessage: 'Se recomienda indicar la fecha de inspección',
       field: 'fecha',
     });
-    result.fieldsWithIssues.push('fecha');
   } else if (!isValidDateFormat(fecha)) {
-    result.errors.push({
+    result.warnings.push({
       code: 'FECHA_INVALID_FORMAT',
       message: `Date format invalid: ${fecha}. Expected YYYY-MM-DD`,
       userMessage: 'La fecha debe estar en formato YYYY-MM-DD',
-      type: ErrorType.DATA,
-      severity: ErrorSeverity.ERROR,
       field: 'fecha',
-      value: fecha,
     });
-    result.fieldsWithIssues.push('fecha');
   }
   
   // Validar levanto (inspector)
@@ -273,6 +281,23 @@ function validateUbicacion(pozo: Pozo, result: PozoValidationResult): void {
 function validateComponentes(pozo: Pozo, result: PozoValidationResult): void {
   const { componentes } = pozo;
   
+  // Validar tipo de cámara: Solo valores permitidos o vacío
+  const tipoCamara = extractValue(componentes.tipoCamara);
+  if (!isEmpty(tipoCamara)) {
+    if (!VALID_TIPO_CAMARA_VALUES.includes(tipoCamara)) {
+      result.errors.push({
+        code: 'TIPO_CAMARA_INVALID',
+        message: `Tipo de cámara must be one of: ${VALID_TIPO_CAMARA_VALUES.join(', ')}, got: ${tipoCamara}`,
+        userMessage: `El tipo de cámara debe ser uno de los valores permitidos o estar en blanco. Valores válidos: ${VALID_TIPO_CAMARA_VALUES.join(', ')}`,
+        type: ErrorType.DATA,
+        severity: ErrorSeverity.ERROR,
+        field: 'tipoCamara',
+        value: tipoCamara,
+      });
+      result.fieldsWithIssues.push('tipoCamara');
+    }
+  }
+  
   // Validar tapa: Si existe_tapa = Sí → estado_tapa debe estar lleno
   const existeTapa = extractValue(componentes.existeTapa);
   if (isYes(existeTapa)) {
@@ -350,12 +375,14 @@ function validateComponentes(pozo: Pozo, result: PozoValidationResult): void {
 
 /**
  * Valida la sección de tuberías
+ * NOTA: Las tuberías son completamente opcionales. Un pozo puede no tener tuberías
+ * si no pudieron verificarlas o si el pozo no tiene conexiones.
  */
 function validateTuberias(pozo: Pozo, allPozos: Map<string, Pozo>, result: PozoValidationResult): void {
   const { tuberias } = pozo;
   
   if (!tuberias || !tuberias.tuberias || tuberias.tuberias.length === 0) {
-    return; // Tuberías son opcionales
+    return; // Tuberías son completamente opcionales - permitido
   }
   
   tuberias.tuberias.forEach((tuberia, index) => {
@@ -421,12 +448,14 @@ function validateTuberias(pozo: Pozo, allPozos: Map<string, Pozo>, result: PozoV
 
 /**
  * Valida la sección de sumideros
+ * NOTA: Los sumideros son completamente opcionales. Un pozo puede no tener sumideros
+ * si no pudieron verificarlos o si el pozo no tiene conexiones de sumidero.
  */
 function validateSumideros(pozo: Pozo, allPozos: Map<string, Pozo>, result: PozoValidationResult): void {
   const { sumideros } = pozo;
   
   if (!sumideros || !sumideros.sumideros || sumideros.sumideros.length === 0) {
-    return; // Sumideros son opcionales
+    return; // Sumideros son completamente opcionales - permitido
   }
   
   sumideros.sumideros.forEach((sumidero, index) => {
@@ -723,6 +752,7 @@ export function formatValidationResult(result: PozoValidationResult): {
  * Exporta las constantes de validación
  */
 export const VALIDATION_RULES = {
+  tipoCamaraValido: `Tipo de cámara debe ser uno de: ${VALID_TIPO_CAMARA_VALUES.join(', ')}, o estar en blanco`,
   tapaRequiereEstado: 'Si existe_tapa = Sí, estado_tapa es obligatorio',
   cilindroRequiereDiametro: 'Si existe_cilindro = Sí, diametro_cilindro es obligatorio y > 0',
   peldanosRequiereNumero: 'Si existe_peldaños = Sí, numero_peldaños es obligatorio y > 0',
@@ -731,6 +761,9 @@ export const VALIDATION_RULES = {
   coordenadasValidas: 'Coordenadas deben estar en rangos geográficos válidos',
   fechaFormato: 'Fechas deben estar en formato YYYY-MM-DD',
   integridadReferencial: 'Tuberías y sumideros deben tener id_pozo válido',
+  tuberiasOpcionales: 'Las tuberías son completamente opcionales - un pozo puede no tener tuberías',
+  sumiderosOpcionales: 'Los sumideros son completamente opcionales - un pozo puede no tener sumideros',
 } as const;
 
 export const GEOGRAPHIC_BOUNDS_EXPORT = GEOGRAPHIC_BOUNDS;
+export const VALID_TIPO_CAMARA_VALUES_EXPORT = VALID_TIPO_CAMARA_VALUES;

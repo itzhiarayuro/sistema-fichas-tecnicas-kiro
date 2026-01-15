@@ -265,6 +265,13 @@ export default function UploadPage() {
     setProcessedPhotos(prev => [...prev, ...allPhotos]);
     setFiles(prev => [...prev, ...fileItems]);
     
+    // Guardar pozos en el store global inmediatamente
+    if (allPozos.length > 0) {
+      const existingPozos = Array.from(pozos.values());
+      const mergedPozos = [...existingPozos, ...allPozos];
+      useGlobalStore.setState({ pozos: new Map(mergedPozos.map(p => [p.id, p])) });
+    }
+    
     // Finalizar
     setIsProcessing(false);
     setProcessingMessage('');
@@ -295,10 +302,7 @@ export default function UploadPage() {
    * Continúa al siguiente paso
    */
   const handleContinue = useCallback(() => {
-    // Agregar datos en stores (acumulativo)
-    if (processedPozos.length > 0) {
-      processedPozos.forEach(pozo => addPozo(pozo));
-    }
+    // Agregar fotos en stores si hay
     if (processedPhotos.length > 0) {
       processedPhotos.forEach(photo => addPhoto(photo));
     }
@@ -306,7 +310,7 @@ export default function UploadPage() {
     // Navegar a la página de pozos
     setCurrentStep('review');
     router.push('/pozos');
-  }, [processedPozos, processedPhotos, addPozo, addPhoto, setCurrentStep, router]);
+  }, [processedPhotos, addPhoto, setCurrentStep, router]);
 
   /**
    * Reinicia la carga
@@ -357,24 +361,34 @@ export default function UploadPage() {
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
               <a 
-                href="/ejemplos/ejemplo_pozos.xlsx" 
-                download
+                href="/ejemplos/ejemplo_completo_33campos.xlsx" 
+                download="ejemplo_completo_33campos.xlsx"
                 className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
               >
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
-                Excel de ejemplo
+                Excel Completo (33 campos)
               </a>
               <a 
-                href="/ejemplos/M680-P.jpg" 
-                download
+                href="/api/ejemplos/fotos-zip" 
+                download="fotos-ejemplo.zip"
                 className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
               >
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
-                Fotos de ejemplo
+                Fotos de Ejemplo (18 imágenes ZIP)
+              </a>
+              <a 
+                href="/ejemplos/README.md" 
+                download="README.md"
+                className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+              >
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Guía de Uso
               </a>
             </div>
           </div>

@@ -146,8 +146,49 @@ export interface GeometricShape {
 }
 
 /**
- * Configuración de página para el diseño
+ * Imagen (logo) en el diseño
  */
+export interface DesignImage {
+  /** ID único de la imagen */
+  id: string;
+  
+  /** URL o data URL de la imagen */
+  src: string;
+  
+  /** Nombre del archivo original */
+  fileName: string;
+  
+  /** Posición y tamaño en el canvas */
+  position: ElementPosition;
+  
+  /** Propiedades de estilo */
+  style: {
+    /** Opacidad (0-1) */
+    opacity: number;
+    /** Rotación en grados */
+    rotation: number;
+    /** Filtro CSS (blur, brightness, etc) */
+    filter?: string;
+    /** Modo de mezcla (blend mode) */
+    mixBlendMode?: string;
+  };
+  
+  /** Orden de visualización */
+  zIndex: number;
+  
+  /** ¿Está bloqueada? */
+  locked: boolean;
+  
+  /** ¿Está visible? */
+  visible: boolean;
+  
+  /** Timestamp de creación */
+  createdAt: number;
+  
+  /** Timestamp de última modificación */
+  updatedAt: number;
+}
+
 export interface PageConfig {
   /** Tamaño de página: A4, Letter, etc */
   size: 'A4' | 'Letter' | 'Legal' | 'Custom';
@@ -229,6 +270,9 @@ export interface FichaDesign {
   
   /** Figuras geométricas en el diseño */
   shapes: GeometricShape[];
+  
+  /** Imágenes (logos) en el diseño */
+  images: DesignImage[];
   
   /** ¿Es un diseño por defecto del sistema? */
   isDefault: boolean;

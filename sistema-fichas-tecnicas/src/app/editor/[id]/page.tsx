@@ -266,23 +266,39 @@ export default function EditorPage() {
   
   // Datos de tuberías
   const tuberiasData = useMemo(() => {
-    if (!pozo) {
+    if (!pozo || !pozo.tuberias) {
       return { entradas: [], salidas: [] };
     }
+    
+    // Filtrar tuberías por tipo
+    const entradas = Array.isArray(pozo.tuberias) 
+      ? pozo.tuberias.filter((t: any) => {
+          const tipo = typeof t.tipoTuberia === 'string' ? t.tipoTuberia : t.tipoTuberia?.value;
+          return tipo === 'entrada';
+        })
+      : [];
+    
+    const salidas = Array.isArray(pozo.tuberias)
+      ? pozo.tuberias.filter((t: any) => {
+          const tipo = typeof t.tipoTuberia === 'string' ? t.tipoTuberia : t.tipoTuberia?.value;
+          return tipo === 'salida';
+        })
+      : [];
+    
     return {
-      entradas: pozo.tuberias.entradas.map((t) => ({
-        id: t.id,
+      entradas: entradas.map((t: any) => ({
+        id: t.idTuberia || t.id,
         diametro: createFieldValue(t.diametro),
         material: createFieldValue(t.material),
         cota: createFieldValue(t.cota),
-        direccion: createFieldValue(t.direccion),
+        direccion: createFieldValue(t.tipoTuberia),
       })),
-      salidas: pozo.tuberias.salidas.map((t) => ({
-        id: t.id,
+      salidas: salidas.map((t: any) => ({
+        id: t.idTuberia || t.id,
         diametro: createFieldValue(t.diametro),
         material: createFieldValue(t.material),
         cota: createFieldValue(t.cota),
-        direccion: createFieldValue(t.direccion),
+        direccion: createFieldValue(t.tipoTuberia),
       })),
     };
   }, [pozo]);
@@ -299,11 +315,11 @@ export default function EditorPage() {
       };
     }
     return {
-      principal: pozo.fotos.principal,
-      entradas: pozo.fotos.entradas,
-      salidas: pozo.fotos.salidas,
-      sumideros: pozo.fotos.sumideros,
-      otras: pozo.fotos.otras,
+      principal: pozo.fotos?.principal || [],
+      entradas: pozo.fotos?.entradas || [],
+      salidas: pozo.fotos?.salidas || [],
+      sumideros: pozo.fotos?.sumideros || [],
+      otras: pozo.fotos?.otras || [],
     };
   }, [pozo]);
   
@@ -509,12 +525,69 @@ export default function EditorPage() {
       onBack={handleBack}
       onCustomizeClick={() => setShowCustomization(!showCustomization)}
       onResetFormat={handleResetFormat}
-      onGeneratePDF={() => {
-        // TODO: Implement PDF generation
-        addToast({
-          type: 'info',
-          message: 'Generación de PDF en desarrollo',
-        });
+      onGeneratePDF={async () => {
+        // Validar que haya fotos
+        const fotosCount = (
+          (fotosData.principal?.length || 0) +
+          (fotosData.entradas?.length || 0) +
+          (fotosData.salidas?.length || 0) +
+          (fotosData.sumideros?.length || 0) +
+          (fotosData.otras?.length || 0)
+        );
+
+        if (fotosCount === 0) {
+          addToast({
+            type: 'error',
+            message: 'No se puede generar PDF: la ficha no tiene fotos asociadas. Por favor, carga al menos una foto antes de generar el PDF.',
+            duration: 5000,
+          });
+          return;
+        }
+
+        try {
+          // Llamar a la API para generar PDF
+          const response = await fetch('/api/pdf', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ficha: syncedState,
+              pozo,
+            }),
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            addToast({
+              type: 'error',
+              message: error.error || 'Error al generar PDF',
+              duration: 5000,
+            });
+            return;
+          }
+
+          // Descargar PDF
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `ficha-${pozo.idPozo?.value || 'tecnica'}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+
+          addToast({
+            type: 'success',
+            message: 'PDF generado y descargado exitosamente',
+          });
+        } catch (error) {
+          console.error('Error generando PDF:', error);
+          addToast({
+            type: 'error',
+            message: 'Error al generar PDF. Por favor, intenta de nuevo.',
+            duration: 5000,
+          });
+        }
       }}
       showCustomization={showCustomization}
       isPending={isPending}

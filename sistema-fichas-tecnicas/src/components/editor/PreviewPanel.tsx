@@ -375,17 +375,26 @@ export function PreviewPanel({
           <div className="grid grid-cols-2 gap-6">
             <div>
               <h3 className="font-medium text-gray-700 mb-2">
-                Entradas ({pozo.tuberias.entradas.length})
+                Entradas ({Array.isArray(pozo.tuberias) ? pozo.tuberias.filter((t: any) => {
+                  const tipo = typeof t.tipoTuberia === 'string' ? t.tipoTuberia : t.tipoTuberia?.value;
+                  return tipo === 'entrada';
+                }).length : 0})
               </h3>
-              {pozo.tuberias.entradas.length > 0 ? (
+              {Array.isArray(pozo.tuberias) && pozo.tuberias.filter((t: any) => {
+                const tipo = typeof t.tipoTuberia === 'string' ? t.tipoTuberia : t.tipoTuberia?.value;
+                return tipo === 'entrada';
+              }).length > 0 ? (
                 <div className="space-y-2">
-                  {pozo.tuberias.entradas.map((t, i) => (
+                  {pozo.tuberias.filter((t: any) => {
+                    const tipo = typeof t.tipoTuberia === 'string' ? t.tipoTuberia : t.tipoTuberia?.value;
+                    return tipo === 'entrada';
+                  }).map((t: any, i: number) => (
                     <div 
-                      key={t.id} 
+                      key={t.idTuberia || t.id} 
                       className="bg-gray-50 p-2 rounded"
                       style={{ fontSize: styles.fonts.valueSize }}
                     >
-                      <span className="font-medium">E{i + 1}:</span> Ø{t.diametro}mm, {t.material}, Cota: {t.cota}m
+                      <span className="font-medium">E{i + 1}:</span> Ø{typeof t.diametro === 'string' ? t.diametro : t.diametro?.value}mm, {typeof t.material === 'string' ? t.material : t.material?.value}, Cota: {typeof t.cota === 'string' ? t.cota : t.cota?.value}m
                     </div>
                   ))}
                 </div>
@@ -397,17 +406,26 @@ export function PreviewPanel({
             </div>
             <div>
               <h3 className="font-medium text-gray-700 mb-2">
-                Salidas ({pozo.tuberias.salidas.length})
+                Salidas ({Array.isArray(pozo.tuberias) ? pozo.tuberias.filter((t: any) => {
+                  const tipo = typeof t.tipoTuberia === 'string' ? t.tipoTuberia : t.tipoTuberia?.value;
+                  return tipo === 'salida';
+                }).length : 0})
               </h3>
-              {pozo.tuberias.salidas.length > 0 ? (
+              {Array.isArray(pozo.tuberias) && pozo.tuberias.filter((t: any) => {
+                const tipo = typeof t.tipoTuberia === 'string' ? t.tipoTuberia : t.tipoTuberia?.value;
+                return tipo === 'salida';
+              }).length > 0 ? (
                 <div className="space-y-2">
-                  {pozo.tuberias.salidas.map((t, i) => (
+                  {pozo.tuberias.filter((t: any) => {
+                    const tipo = typeof t.tipoTuberia === 'string' ? t.tipoTuberia : t.tipoTuberia?.value;
+                    return tipo === 'salida';
+                  }).map((t: any, i: number) => (
                     <div 
-                      key={t.id} 
+                      key={t.idTuberia || t.id} 
                       className="bg-gray-50 p-2 rounded"
                       style={{ fontSize: styles.fonts.valueSize }}
                     >
-                      <span className="font-medium">S{i + 1}:</span> Ø{t.diametro}mm, {t.material}, Cota: {t.cota}m
+                      <span className="font-medium">S{i + 1}:</span> Ø{typeof t.diametro === 'string' ? t.diametro : t.diametro?.value}mm, {typeof t.material === 'string' ? t.material : t.material?.value}, Cota: {typeof t.cota === 'string' ? t.cota : t.cota?.value}m
                     </div>
                   ))}
                 </div>

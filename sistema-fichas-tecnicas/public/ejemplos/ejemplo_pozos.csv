@@ -1,11 +1,11 @@
-﻿ID_POZO,NOMBRE,UBICACION,PROFUNDIDAD,ESTADO,TIPO,OBSERVACIONES
-PZ1666,Pozo Principal,Sector A,150.5,Activo,Extracción,Funcionando correctamente
-PZ1667,Pozo Secundario,Sector B,120.0,Activo,Inyección,Requiere mantenimiento
-PZ1668,Pozo Emergencia,Sector C,180.0,Inactivo,Extracción,En espera de reparación
-PZ1669,Pozo Experimental,Sector D,95.3,Mantenimiento,Prueba,Bajo evaluación
-PZ1670,Pozo Profundo,Sector E,200.0,Activo,Extracción,Profundidad máxima
-PZ1671,Pozo Superficial,Sector F,50.0,Activo,Inyección,Profundidad mínima
-PZ1672,Pozo Reserva,Sector G,165.0,Inactivo,Extracción,En reserva
-PZ1673,Pozo Prueba,Sector H,130.0,Mantenimiento,Prueba,Bajo evaluación
-PZ1674,Pozo Backup,Sector I,145.0,Activo,Extracción,Sistema de respaldo
-PZ1675,Pozo Monitor,Sector J,155.0,Activo,Monitoreo,Seguimiento continuo
+﻿codigo,direccion,barrio,sistema,estado,fecha,levanto,observaciones,profundidad,elevacion
+PZ1666,Cl 7 # 10-44,Centro,Combinado,Bueno,2024-01-15,Michelle,Sin novedad,2.50,1850.25
+PZ1667,Carrera 10 #20-15,Norte,Sanitario,Regular,2024-01-16,Carlos,Requiere limpieza,3.00,1852.10
+PZ1668,Avenida Principal #5-67,Sur,Pluvial,Malo,2024-01-17,Ana,Tapa dañada,2.80,1848.50
+PZ1669,Calle 23 #8-90,Este,Combinado,Bueno,2024-01-18,Pedro,Funcionando correctamente,2.20,1855.00
+PZ1670,Diagonal 45 #12-34,Oeste,Sanitario,Regular,2024-01-19,Maria,Bajo evaluación,2.60,1847.30
+PZ1671,Transversal 8 #15-20,Centro,Pluvial,Bueno,2024-01-20,Juan,Sin observaciones,1.90,1851.75
+PZ1672,Carrera 5 #30-45,Norte,Combinado,Malo,2024-01-21,Laura,Requiere reparación urgente,3.20,1849.90
+PZ1673,Calle 12 #4-56,Sur,Sanitario,Bueno,2024-01-22,Diego,Mantenimiento reciente,2.40,1853.40
+PZ1674,Avenida 30 #18-72,Este,Pluvial,Regular,2024-01-23,Sofia,Pendiente revisión,2.70,1846.80
+PZ1675,Diagonal 15 #22-10,Oeste,Combinado,Bueno,2024-01-24,Andres,Operativo,2.10,1854.60

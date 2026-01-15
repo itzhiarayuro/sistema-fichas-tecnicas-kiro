@@ -20,6 +20,7 @@ import { PozosTable, PozoStatusDetail } from '@/components/pozos';
 import { RecommendationsPanel } from '@/components/guided';
 import { AppShell, NextStepIndicator, ProgressBar } from '@/components/layout';
 import { Pozo } from '@/types';
+import { getFieldValueOrDefault } from '@/lib/helpers/fieldValueHelpers';
 
 export default function PozosPage() {
   const router = useRouter();
@@ -105,13 +106,13 @@ export default function PozosPage() {
             visible: true,
             locked: false,
             content: {
-              codigo: { value: pozo.idPozo, source: 'excel' as const },
-              direccion: { value: pozo.direccion, source: 'excel' as const },
-              barrio: { value: pozo.barrio, source: 'excel' as const },
-              sistema: { value: pozo.sistema, source: 'excel' as const },
-              estado: { value: pozo.estado, source: 'excel' as const },
-              fecha: { value: pozo.fecha, source: 'excel' as const },
-              observaciones: { value: pozo.observaciones, source: 'excel' as const },
+              codigo: { value: getFieldValueOrDefault(pozo.idPozo), source: 'excel' as const },
+              direccion: { value: getFieldValueOrDefault(pozo.direccion), source: 'excel' as const },
+              barrio: { value: getFieldValueOrDefault(pozo.barrio), source: 'excel' as const },
+              sistema: { value: getFieldValueOrDefault(pozo.sistema), source: 'excel' as const },
+              estado: { value: getFieldValueOrDefault(pozo.estado), source: 'excel' as const },
+              fecha: { value: getFieldValueOrDefault(pozo.fecha), source: 'excel' as const },
+              observaciones: { value: getFieldValueOrDefault(pozo.observaciones), source: 'excel' as const },
             },
           },
           {
@@ -121,16 +122,16 @@ export default function PozosPage() {
             visible: true,
             locked: false,
             content: {
-              alturaTotal: { value: pozo.elevacion, source: 'excel' as const },
-              rasante: { value: pozo.profundidad, source: 'excel' as const },
-              tapaMaterial: { value: pozo.materialTapa, source: 'excel' as const },
-              tapaEstado: { value: pozo.estadoTapa, source: 'excel' as const },
-              conoTipo: { value: pozo.tipoCono, source: 'excel' as const },
-              conoMaterial: { value: pozo.materialCono, source: 'excel' as const },
-              cuerpoDiametro: { value: pozo.diametroCilindro, source: 'excel' as const },
-              canuelaMaterial: { value: pozo.materialCanuela, source: 'excel' as const },
-              peldanosCantidad: { value: pozo.numeroPeldanos, source: 'excel' as const },
-              peldanosMaterial: { value: pozo.materialPeldanos, source: 'excel' as const },
+              alturaTotal: { value: getFieldValueOrDefault(pozo.elevacion), source: 'excel' as const },
+              rasante: { value: getFieldValueOrDefault(pozo.profundidad), source: 'excel' as const },
+              tapaMaterial: { value: getFieldValueOrDefault(pozo.materialTapa), source: 'excel' as const },
+              tapaEstado: { value: getFieldValueOrDefault(pozo.estadoTapa), source: 'excel' as const },
+              conoTipo: { value: getFieldValueOrDefault(pozo.tipoCono), source: 'excel' as const },
+              conoMaterial: { value: getFieldValueOrDefault(pozo.materialCono), source: 'excel' as const },
+              cuerpoDiametro: { value: getFieldValueOrDefault(pozo.diametroCilindro), source: 'excel' as const },
+              canuelaMaterial: { value: getFieldValueOrDefault(pozo.materialCanuela), source: 'excel' as const },
+              peldanosCantidad: { value: getFieldValueOrDefault(pozo.numeroPeldanos), source: 'excel' as const },
+              peldanosMaterial: { value: getFieldValueOrDefault(pozo.materialPeldanos), source: 'excel' as const },
             },
           },
           {
@@ -202,7 +203,7 @@ export default function PozosPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${pozo.idPozo}.pdf`;
+      a.download = `${getFieldValueOrDefault(pozo.idPozo, 'pozo')}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -391,8 +392,8 @@ function PozoPreviewPanel({
         {/* Código y estado */}
         <div className="flex items-start justify-between">
           <div>
-            <h3 className="text-2xl font-bold text-primary">{pozo.idPozo}</h3>
-            <p className="text-gray-600">{pozo.direccion || 'Sin dirección'}</p>
+            <h3 className="text-2xl font-bold text-primary">{getFieldValueOrDefault(pozo.idPozo)}</h3>
+            <p className="text-gray-600">{getFieldValueOrDefault(pozo.direccion, 'Sin dirección')}</p>
           </div>
         </div>
         
@@ -405,19 +406,19 @@ function PozoPreviewPanel({
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between">
               <dt className="text-gray-500">Barrio:</dt>
-              <dd className="text-gray-900 font-medium">{pozo.barrio || '-'}</dd>
+              <dd className="text-gray-900 font-medium">{getFieldValueOrDefault(pozo.barrio)}</dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-gray-500">Sistema:</dt>
-              <dd className="text-gray-900 font-medium">{pozo.sistema || '-'}</dd>
+              <dd className="text-gray-900 font-medium">{getFieldValueOrDefault(pozo.sistema)}</dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-gray-500">Estado:</dt>
-              <dd className="text-gray-900 font-medium">{pozo.estado || '-'}</dd>
+              <dd className="text-gray-900 font-medium">{getFieldValueOrDefault(pozo.estado)}</dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-gray-500">Fecha:</dt>
-              <dd className="text-gray-900 font-medium">{pozo.fecha || '-'}</dd>
+              <dd className="text-gray-900 font-medium">{getFieldValueOrDefault(pozo.fecha)}</dd>
             </div>
           </dl>
         </div>
@@ -428,23 +429,23 @@ function PozoPreviewPanel({
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between">
               <dt className="text-gray-500">Altura total:</dt>
-              <dd className="text-gray-900 font-medium">{pozo.elevacion || '-'}</dd>
+              <dd className="text-gray-900 font-medium">{getFieldValueOrDefault(pozo.elevacion)}</dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-gray-500">Rasante:</dt>
-              <dd className="text-gray-900 font-medium">{pozo.profundidad || '-'}</dd>
+              <dd className="text-gray-900 font-medium">{getFieldValueOrDefault(pozo.profundidad)}</dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-gray-500">Tapa (material):</dt>
-              <dd className="text-gray-900 font-medium">{pozo.materialTapa || '-'}</dd>
+              <dd className="text-gray-900 font-medium">{getFieldValueOrDefault(pozo.materialTapa)}</dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-gray-500">Tapa (estado):</dt>
-              <dd className="text-gray-900 font-medium">{pozo.estadoTapa || '-'}</dd>
+              <dd className="text-gray-900 font-medium">{getFieldValueOrDefault(pozo.estadoTapa)}</dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-gray-500">Diámetro cuerpo:</dt>
-              <dd className="text-gray-900 font-medium">{pozo.diametroCilindro || '-'}</dd>
+              <dd className="text-gray-900 font-medium">{getFieldValueOrDefault(pozo.diametroCilindro)}</dd>
             </div>
           </dl>
         </div>
@@ -486,10 +487,10 @@ function PozoPreviewPanel({
         </div>
         
         {/* Observaciones */}
-        {pozo.observaciones && (
+        {pozo.observaciones?.value && (
           <div className="bg-gray-50 rounded-lg p-4">
             <h4 className="font-medium text-gray-900 mb-2">Observaciones</h4>
-            <p className="text-sm text-gray-700">{pozo.observaciones}</p>
+            <p className="text-sm text-gray-700">{pozo.observaciones.value}</p>
           </div>
         )}
       </div>

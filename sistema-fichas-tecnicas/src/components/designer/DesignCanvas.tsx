@@ -23,6 +23,7 @@ export function DesignCanvas({
   const [isDragging, setIsDragging] = useState(false);
   const [drawStart, setDrawStart] = useState<{ x: number; y: number } | null>(null);
   const [drawEnd, setDrawEnd] = useState<{ x: number; y: number } | null>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   
   // Store
   const editorState = useDesignStore((state) => state.editorState);
@@ -35,6 +36,12 @@ export function DesignCanvas({
   
   const zoomLevel = editorState?.zoomLevel || 1;
   const selectedFieldId = editorState?.selectedFieldId;
+  
+  // Undo/Redo
+  const undo = useDesignStore((state) => state.undo);
+  const redo = useDesignStore((state) => state.redo);
+  const canUndo = useDesignStore((state) => state.canUndo);
+  const canRedo = useDesignStore((state) => state.canRedo);
   
   // Manejar drag over
   const handleDragOver = (e: React.DragEvent) => {
@@ -126,6 +133,76 @@ export function DesignCanvas({
     updateEditorState({ zoomLevel: newZoom });
   };
 
+  // Manejar atajos de teclado
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        if (canUndo()) undo();
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        if (canRedo()) redo();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [canUndo, canRedo, undo, redo]);
+
+  // Manejar inserción de imágenes
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.currentTarget.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      const src = event.target?.result as string;
+      
+      // Crear nueva imagen en el centro del canvas
+      const centerX = (design.pageConfig.width * 3.78) / 2 - 50;
+      const centerY = (design.pageConfig.height * 3.78) / 2 - 50;
+
+      const newImage = {
+        id: `image-${Date.now()}`,
+        src,
+        fileName: file.name,
+        position: {
+          x: centerX,
+          y: centerY,
+          width: 100,
+          height: 100,
+        },
+        style: {
+          opacity: 1,
+          rotation: 0,
+        },
+        zIndex: Math.max(...design.shapes.map(s => s.zIndex), ...design.fieldPlacements.map(f => f.zIndex), ...(design.images || []).map(i => i.zIndex), 0) + 1,
+        locked: false,
+        visible: true,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+
+      const updatedDesign = {
+        ...design,
+        images: [...(design.images || []), newImage],
+        updatedAt: Date.now(),
+      };
+
+      updateDesign(design.id, updatedDesign);
+      updateEditorState({ selectedFieldId: newImage.id });
+    };
+
+    reader.readAsDataURL(file);
+    
+    // Limpiar input
+    if (imageInputRef.current) {
+      imageInputRef.current.value = '';
+    }
+  };
+
   // Manejar dibujo de figuras
   const handleCanvasMouseDown = (e: React.MouseEvent) => {
     if (!drawingTool) return;
@@ -209,6 +286,29 @@ export function DesignCanvas({
       {/* Toolbar */}
       <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200">
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => undo()}
+            disabled={!canUndo()}
+            className="p-1 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Deshacer (Ctrl+Z)"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6-6m0 0l-6 6" />
+            </svg>
+          </button>
+          <button
+            onClick={() => redo()}
+            disabled={!canRedo()}
+            className="p-1 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Rehacer (Ctrl+Y)"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10h-10a8 8 0 00-8 8v2m0 0l-6-6m6 6l6-6" />
+            </svg>
+          </button>
+          
+          <div className="w-px h-6 bg-gray-300 mx-2" />
+          
           <span className="text-sm text-gray-600">Zoom:</span>
           <button
             onClick={() => handleZoom('out')}
@@ -238,6 +338,25 @@ export function DesignCanvas({
         </div>
         
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => imageInputRef.current?.click()}
+            className="p-1 hover:bg-gray-100 rounded"
+            title="Insertar imagen"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </button>
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            className="hidden"
+          />
+          
+          <div className="w-px h-6 bg-gray-300 mx-2" />
+          
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
@@ -297,10 +416,25 @@ export function DesignCanvas({
           
           {/* Figuras geométricas */}
           {design.shapes.map((shape) => (
-            <ShapeElement
+            <CanvasShape
               key={shape.id}
               shape={shape}
+              design={design}
+              isSelected={shape.id === selectedFieldId}
               zoomLevel={zoomLevel}
+              onSelect={(e) => handleFieldClick(shape.id, e)}
+            />
+          ))}
+          
+          {/* Imágenes */}
+          {(design.images || []).map((image) => (
+            <CanvasImage
+              key={image.id}
+              image={image}
+              design={design}
+              isSelected={image.id === selectedFieldId}
+              zoomLevel={zoomLevel}
+              onSelect={(e) => handleFieldClick(image.id, e)}
             />
           ))}
           
@@ -440,6 +574,196 @@ function ShapeElement({ shape, zoomLevel }: ShapeElementProps) {
   return null;
 }
 
+interface CanvasImageProps {
+  image: any; // DesignImage type
+  design: FichaDesign;
+  isSelected: boolean;
+  zoomLevel: number;
+  onSelect: (e: React.MouseEvent) => void;
+}
+
+function CanvasImage({ image, design, isSelected, zoomLevel, onSelect }: CanvasImageProps) {
+  const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const imageRef = useRef<HTMLDivElement>(null);
+  
+  const updateDesign = useDesignStore((state) => state.updateDesign);
+  
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).classList.contains('resize-handle')) {
+      return;
+    }
+    
+    e.stopPropagation();
+    onSelect(e);
+    
+    const rect = imageRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    
+    setDragOffset({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+    setIsDragging(true);
+  };
+  
+  const handleResizeMouseDown = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsResizing(true);
+  };
+  
+  useEffect(() => {
+    if (!isDragging) return;
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      const canvas = imageRef.current?.parentElement;
+      if (!canvas) return;
+      
+      const canvasRect = canvas.getBoundingClientRect();
+      const newX = (e.clientX - canvasRect.left - dragOffset.x) / zoomLevel;
+      const newY = (e.clientY - canvasRect.top - dragOffset.y) / zoomLevel;
+      
+      const gridSize = design.pageConfig.gridSize;
+      const finalX = design.pageConfig.snapToGrid
+        ? Math.round(newX / gridSize) * gridSize
+        : newX;
+      const finalY = design.pageConfig.snapToGrid
+        ? Math.round(newY / gridSize) * gridSize
+        : newY;
+      
+      const updatedImages = (design.images || []).map((img) =>
+        img.id === image.id
+          ? {
+              ...img,
+              position: {
+                ...img.position,
+                x: Math.max(0, finalX),
+                y: Math.max(0, finalY),
+              },
+              updatedAt: Date.now(),
+            }
+          : img
+      );
+      
+      updateDesign(design.id, {
+        images: updatedImages,
+      });
+    };
+    
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragOffset, zoomLevel, image, design, updateDesign]);
+  
+  useEffect(() => {
+    if (!isResizing) return;
+    
+    const startX = image.position.width;
+    const startY = image.position.height;
+    let lastX = 0;
+    let lastY = 0;
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      if (lastX === 0 && lastY === 0) {
+        lastX = e.clientX;
+        lastY = e.clientY;
+        return;
+      }
+      
+      const deltaX = (e.clientX - lastX) / zoomLevel;
+      const deltaY = (e.clientY - lastY) / zoomLevel;
+      
+      const newWidth = Math.max(20, startX + deltaX);
+      const newHeight = Math.max(20, startY + deltaY);
+      
+      const updatedImages = (design.images || []).map((img) =>
+        img.id === image.id
+          ? {
+              ...img,
+              position: {
+                ...img.position,
+                width: newWidth,
+                height: newHeight,
+              },
+              updatedAt: Date.now(),
+            }
+          : img
+      );
+      
+      updateDesign(design.id, {
+        images: updatedImages,
+      });
+      
+      lastX = e.clientX;
+      lastY = e.clientY;
+    };
+    
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing, image, design, zoomLevel, updateDesign]);
+
+  return (
+    <div
+      ref={imageRef}
+      onMouseDown={handleMouseDown}
+      onClick={onSelect}
+      className={`absolute cursor-grab active:cursor-grabbing transition-all select-none border-2 ${
+        isSelected
+          ? 'ring-2 ring-blue-500 border-blue-400'
+          : 'hover:ring-1 hover:ring-gray-400 hover:border-gray-400 border-gray-300'
+      } ${isDragging ? 'opacity-75 ring-2 ring-blue-500' : ''}`}
+      style={{
+        left: image.position.x * zoomLevel,
+        top: image.position.y * zoomLevel,
+        width: image.position.width * zoomLevel,
+        height: image.position.height * zoomLevel,
+        zIndex: image.zIndex,
+        opacity: image.style.opacity,
+        transform: `rotate(${image.style.rotation}deg)`,
+        overflow: 'hidden',
+      }}
+    >
+      <img
+        src={image.src}
+        alt={image.fileName}
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'contain',
+          pointerEvents: 'none',
+          filter: image.style.filter || 'none',
+        }}
+      />
+      
+      {isSelected && (
+        <div
+          onMouseDown={handleResizeMouseDown}
+          className="resize-handle absolute bottom-0 right-0 w-4 h-4 bg-blue-500 cursor-se-resize rounded-tl hover:bg-blue-600"
+          title="Redimensionar"
+        />
+      )}
+    </div>
+  );
+}
+
 interface DrawingPreviewProps {
   start: { x: number; y: number };
   end: { x: number; y: number };
@@ -539,6 +863,308 @@ function DrawingPreview({
   return null;
 }
 
+interface CanvasShapeProps {
+  shape: GeometricShape;
+  design: FichaDesign;
+  isSelected: boolean;
+  zoomLevel: number;
+  onSelect: (e: React.MouseEvent) => void;
+}
+
+function CanvasShape({ shape, design, isSelected, zoomLevel, onSelect }: CanvasShapeProps) {
+  const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const shapeRef = useRef<HTMLDivElement>(null);
+  
+  const updateDesign = useDesignStore((state) => state.updateDesign);
+  
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).classList.contains('resize-handle')) {
+      return;
+    }
+    
+    e.stopPropagation();
+    onSelect(e);
+    
+    const rect = shapeRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    
+    setDragOffset({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+    setIsDragging(true);
+  };
+  
+  const handleResizeMouseDown = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsResizing(true);
+  };
+  
+  useEffect(() => {
+    if (!isDragging) return;
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      const canvas = shapeRef.current?.parentElement;
+      if (!canvas) return;
+      
+      const canvasRect = canvas.getBoundingClientRect();
+      const newX = (e.clientX - canvasRect.left - dragOffset.x) / zoomLevel;
+      const newY = (e.clientY - canvasRect.top - dragOffset.y) / zoomLevel;
+      
+      const gridSize = design.pageConfig.gridSize;
+      const finalX = design.pageConfig.snapToGrid
+        ? Math.round(newX / gridSize) * gridSize
+        : newX;
+      const finalY = design.pageConfig.snapToGrid
+        ? Math.round(newY / gridSize) * gridSize
+        : newY;
+      
+      const updatedShapes = design.shapes.map((s) =>
+        s.id === shape.id
+          ? {
+              ...s,
+              position: {
+                ...s.position,
+                x: Math.max(0, finalX),
+                y: Math.max(0, finalY),
+              },
+              updatedAt: Date.now(),
+            }
+          : s
+      );
+      
+      updateDesign(design.id, {
+        shapes: updatedShapes,
+      });
+    };
+    
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragOffset, zoomLevel, shape, design, updateDesign]);
+  
+  useEffect(() => {
+    if (!isResizing) return;
+    
+    const startX = shape.position.width;
+    const startY = shape.position.height;
+    let lastX = 0;
+    let lastY = 0;
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      if (lastX === 0 && lastY === 0) {
+        lastX = e.clientX;
+        lastY = e.clientY;
+        return;
+      }
+      
+      const deltaX = (e.clientX - lastX) / zoomLevel;
+      const deltaY = (e.clientY - lastY) / zoomLevel;
+      
+      const newWidth = Math.max(10, startX + deltaX);
+      const newHeight = Math.max(10, startY + deltaY);
+      
+      const updatedShapes = design.shapes.map((s) =>
+        s.id === shape.id
+          ? {
+              ...s,
+              position: {
+                ...s.position,
+                width: newWidth,
+                height: newHeight,
+              },
+              updatedAt: Date.now(),
+            }
+          : s
+      );
+      
+      updateDesign(design.id, {
+        shapes: updatedShapes,
+      });
+      
+      lastX = e.clientX;
+      lastY = e.clientY;
+    };
+    
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing, shape, design, zoomLevel, updateDesign]);
+
+  // Renderizar según el tipo de figura
+  if (shape.type === 'rectangle') {
+    return (
+      <div
+        ref={shapeRef}
+        onMouseDown={handleMouseDown}
+        onClick={onSelect}
+        className={`absolute cursor-grab active:cursor-grabbing transition-all select-none border ${
+          isSelected
+            ? 'ring-2 ring-blue-500 border-blue-400'
+            : 'hover:ring-1 hover:ring-gray-400 hover:border-gray-400'
+        } ${isDragging ? 'opacity-75 ring-2 ring-blue-500' : ''}`}
+        style={{
+          left: shape.position.x * zoomLevel,
+          top: shape.position.y * zoomLevel,
+          width: shape.position.width * zoomLevel,
+          height: shape.position.height * zoomLevel,
+          backgroundColor: shape.style.fillColor,
+          borderColor: shape.style.strokeColor,
+          borderWidth: shape.style.strokeWidth,
+          opacity: shape.style.opacity,
+          zIndex: shape.zIndex,
+        }}
+      >
+        {isSelected && (
+          <div
+            onMouseDown={handleResizeMouseDown}
+            className="resize-handle absolute bottom-0 right-0 w-4 h-4 bg-blue-500 cursor-se-resize rounded-tl hover:bg-blue-600"
+            title="Redimensionar"
+          />
+        )}
+      </div>
+    );
+  }
+
+  if (shape.type === 'circle') {
+    return (
+      <div
+        ref={shapeRef}
+        onMouseDown={handleMouseDown}
+        onClick={onSelect}
+        className={`absolute cursor-grab active:cursor-grabbing transition-all select-none border rounded-full ${
+          isSelected
+            ? 'ring-2 ring-blue-500 border-blue-400'
+            : 'hover:ring-1 hover:ring-gray-400 hover:border-gray-400'
+        } ${isDragging ? 'opacity-75 ring-2 ring-blue-500' : ''}`}
+        style={{
+          left: shape.position.x * zoomLevel,
+          top: shape.position.y * zoomLevel,
+          width: shape.position.width * zoomLevel,
+          height: shape.position.height * zoomLevel,
+          backgroundColor: shape.style.fillColor,
+          borderColor: shape.style.strokeColor,
+          borderWidth: shape.style.strokeWidth,
+          opacity: shape.style.opacity,
+          zIndex: shape.zIndex,
+        }}
+      >
+        {isSelected && (
+          <div
+            onMouseDown={handleResizeMouseDown}
+            className="resize-handle absolute bottom-0 right-0 w-4 h-4 bg-blue-500 cursor-se-resize rounded-tl hover:bg-blue-600"
+            title="Redimensionar"
+          />
+        )}
+      </div>
+    );
+  }
+
+  if (shape.type === 'line') {
+    const angle = Math.atan2(shape.position.height, shape.position.width) * (180 / Math.PI);
+    const length = Math.sqrt(
+      shape.position.width ** 2 + shape.position.height ** 2
+    );
+    
+    return (
+      <div
+        ref={shapeRef}
+        onMouseDown={handleMouseDown}
+        onClick={onSelect}
+        className={`absolute cursor-grab active:cursor-grabbing transition-all select-none ${
+          isSelected
+            ? 'ring-2 ring-blue-500'
+            : 'hover:ring-1 hover:ring-gray-400'
+        } ${isDragging ? 'opacity-75 ring-2 ring-blue-500' : ''}`}
+        style={{
+          left: shape.position.x * zoomLevel,
+          top: shape.position.y * zoomLevel,
+          width: length * zoomLevel,
+          height: shape.style.strokeWidth,
+          backgroundColor: shape.style.strokeColor,
+          opacity: shape.style.opacity,
+          zIndex: shape.zIndex,
+          transform: `rotate(${angle}deg)`,
+          transformOrigin: '0 0',
+        }}
+      >
+        {isSelected && (
+          <div
+            onMouseDown={handleResizeMouseDown}
+            className="resize-handle absolute bottom-0 right-0 w-4 h-4 bg-blue-500 cursor-se-resize rounded-tl hover:bg-blue-600"
+            title="Redimensionar"
+          />
+        )}
+      </div>
+    );
+  }
+
+  if (shape.type === 'triangle') {
+    const w = shape.position.width * zoomLevel;
+    const h = shape.position.height * zoomLevel;
+    
+    return (
+      <svg
+        ref={shapeRef as any}
+        onMouseDown={handleMouseDown}
+        onClick={onSelect}
+        className={`absolute cursor-grab active:cursor-grabbing transition-all select-none ${
+          isSelected
+            ? 'ring-2 ring-blue-500'
+            : 'hover:ring-1 hover:ring-gray-400'
+        } ${isDragging ? 'opacity-75 ring-2 ring-blue-500' : ''}`}
+        style={{
+          left: shape.position.x * zoomLevel,
+          top: shape.position.y * zoomLevel,
+          width: w,
+          height: h,
+          opacity: shape.style.opacity,
+          zIndex: shape.zIndex,
+        }}
+      >
+        <polygon
+          points={`${w / 2},0 ${w},${h} 0,${h}`}
+          fill={shape.style.fillColor}
+          stroke={shape.style.strokeColor}
+          strokeWidth={shape.style.strokeWidth}
+        />
+        {isSelected && (
+          <rect
+            x={w - 8}
+            y={h - 8}
+            width="8"
+            height="8"
+            fill="#3b82f6"
+            className="cursor-se-resize hover:fill-blue-600"
+            onMouseDown={handleResizeMouseDown}
+            title="Redimensionar"
+          />
+        )}
+      </svg>
+    );
+  }
+
+  return null;
+}
+
 interface CanvasFieldProps {
   placement: FieldPlacement;
   isSelected: boolean;
@@ -556,7 +1182,7 @@ function CanvasField({ placement, isSelected, zoomLevel, onSelect }: CanvasField
   const designs = useDesignStore((state) => state.designs);
   
   const currentDesign = Array.from(designs.values()).find(
-    (d) => d.fieldPlacements.some((fp) => fp.id === placement.id)
+    (d) => d.fieldPlacements && d.fieldPlacements.some((fp) => fp.id === placement.id)
   );
   
   const handleMouseDown = (e: React.MouseEvent) => {
