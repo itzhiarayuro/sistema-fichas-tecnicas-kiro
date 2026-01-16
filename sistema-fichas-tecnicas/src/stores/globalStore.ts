@@ -270,17 +270,37 @@ export const useGlobalStore = create<GlobalState>()(
       getPhotosByPozoId: (pozoId) => {
         const photos: FotoInfo[] = [];
         
-        // Extract codigo from pozoId (e.g., "pozo-M680-1234567890-0" -> "M680")
-        const codigoMatch = pozoId.match(/^pozo-([A-Z]\d+)-/);
+        // FIX: Problema #2 - Mejorar extracción de código del pozoId
+        // Soportar múltiples formatos de pozoId:
+        // - "pozo-M680-1234567890-0" (formato con timestamp)
+        // - "M680" (formato simple)
+        // - "pozo-M680" (formato alternativo)
+        const codigoMatch = pozoId.match(/^(?:pozo-)?([A-Z]\d+)/);
         const codigo = codigoMatch ? codigoMatch[1] : pozoId;
         
+        if (!codigo) {
+          console.warn(`[getPhotosByPozoId] No se pudo extraer código de pozoId: ${pozoId}`);
+          return photos;
+        }
+        
         get().photos.forEach((photo) => {
-          // Extract pozo ID from filename (e.g., M680-P.jpg -> M680)
-          const match = photo.filename.match(/^([A-Z]\d+)/);
-          if (match && match[1].toUpperCase() === codigo.toUpperCase()) {
+          if (!photo.filename) {
+            console.warn(`[getPhotosByPozoId] Foto sin filename:`, photo);
+            return;
+          }
+          
+          // FIX: Problema #2 - Mejorar extracción de código del filename
+          // Soportar múltiples formatos:
+          // - "M680-P.jpg" (formato estándar)
+          // - "M680-E1-T.jpg" (entrada con tubería)
+          // - "M680-S-T.jpg" (salida con tubería)
+          // - "M680-SUM1.jpg" (sumidero)
+          const filenameMatch = photo.filename.match(/^([A-Z]\d+)(?:-|_)/);
+          if (filenameMatch && filenameMatch[1].toUpperCase() === codigo.toUpperCase()) {
             photos.push(photo);
           }
         });
+        
         return photos;
       },
     }),

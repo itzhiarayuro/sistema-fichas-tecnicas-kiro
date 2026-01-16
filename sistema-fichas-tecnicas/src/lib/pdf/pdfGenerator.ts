@@ -114,7 +114,18 @@ export class PDFGenerator {
       }
 
       const blob = doc.output('blob');
-      return { success: true, blob, filename: `ficha_${pozo.identificacion.idPozo.value}_${Date.now()}.pdf`, pageCount: ctx.pageNumber };
+      
+      // FIX: Problema #3 - Extraer pozoId de forma robusta
+      let pozoIdForFilename = 'ficha';
+      if (pozo.identificacion?.idPozo?.value) {
+        pozoIdForFilename = pozo.identificacion.idPozo.value;
+      } else if (pozo.idPozo?.value) {
+        pozoIdForFilename = pozo.idPozo.value;
+      } else if (typeof pozo.idPozo === 'string') {
+        pozoIdForFilename = pozo.idPozo;
+      }
+      
+      return { success: true, blob, filename: `ficha_${pozoIdForFilename}_${Date.now()}.pdf`, pageCount: ctx.pageNumber };
     } catch (error) {
       console.error('PDF Generation Error:', error);
       return { success: false, error: error instanceof Error ? error.message : 'Error desconocido' };
@@ -132,7 +143,7 @@ export class PDFGenerator {
     };
   }
 
-  private renderHeader(ctx: RenderContext, pozo: Pozo): void {
+  private renderHeader(ctx: RenderContext, pozo: any): void {
     const { doc, customization } = ctx;
     const { colors, fonts } = customization;
     doc.setFillColor(colors.headerBg);
@@ -142,11 +153,22 @@ export class PDFGenerator {
     doc.setFont(fonts.fontFamily, 'bold');
     doc.text('FICHA TECNICA DE POZO DE INSPECCION', PDF_CONFIG.pageWidth / 2, 10, { align: 'center' });
     doc.setFontSize(fonts.titleSize - 2);
-    doc.text(`Pozo: ${pozo.identificacion.idPozo.value}`, PDF_CONFIG.pageWidth / 2, 18, { align: 'center' });
+    
+    // FIX: Problema #3 - Soportar múltiples formatos de pozoId
+    let pozoId = '';
+    if (pozo.identificacion?.idPozo?.value) {
+      pozoId = pozo.identificacion.idPozo.value;
+    } else if (pozo.idPozo?.value) {
+      pozoId = pozo.idPozo.value;
+    } else if (typeof pozo.idPozo === 'string') {
+      pozoId = pozo.idPozo;
+    }
+    
+    doc.text(`Pozo: ${pozoId}`, PDF_CONFIG.pageWidth / 2, 18, { align: 'center' });
     ctx.currentY = PDF_CONFIG.headerHeight + 5;
   }
 
-  private async renderSection(ctx: RenderContext, section: FichaSection, pozo: Pozo): Promise<void> {
+  private async renderSection(ctx: RenderContext, section: FichaSection, pozo: any): Promise<void> {
     this.checkPageBreak(ctx, 30);
     switch (section.type) {
       case 'identificacion': this.renderIdentificacionSection(ctx, section, pozo); break;
@@ -215,17 +237,17 @@ export class PDFGenerator {
     const leftX = PDF_CONFIG.margin;
     const rightX = PDF_CONFIG.margin + colWidth;
     
-    // 🔴 Obligatorios
-    this.renderField(ctx, 'Código Pozo', this.getFieldValue(section, 'idPozo', pozo.identificacion.idPozo.value), leftX, colWidth, true);
-    this.renderField(ctx, 'Levantó', this.getFieldValue(section, 'levanto', pozo.identificacion.levanto.value), rightX, colWidth, true);
+    // 🔴 Obligatorios - Usar acceso seguro a propiedades
+    this.renderField(ctx, 'Código Pozo', this.getFieldValue(section, 'idPozo', pozo.identificacion?.idPozo?.value || pozo.idPozo?.value || ''), leftX, colWidth, true);
+    this.renderField(ctx, 'Levantó', this.getFieldValue(section, 'levanto', pozo.identificacion?.levanto?.value || ''), rightX, colWidth, true);
     ctx.currentY += PDF_CONFIG.lineHeight;
     
-    this.renderField(ctx, 'Fecha Inspección', this.getFieldValue(section, 'fecha', pozo.identificacion.fecha.value), leftX, colWidth, true);
-    this.renderField(ctx, 'Estado General', this.getFieldValue(section, 'estado', pozo.identificacion.estado.value), rightX, colWidth, true);
+    this.renderField(ctx, 'Fecha Inspección', this.getFieldValue(section, 'fecha', pozo.identificacion?.fecha?.value || ''), leftX, colWidth, true);
+    this.renderField(ctx, 'Estado General', this.getFieldValue(section, 'estado', pozo.identificacion?.estado?.value || ''), rightX, colWidth, true);
     ctx.currentY += PDF_CONFIG.lineHeight;
     
-    this.renderField(ctx, 'Coordenada X', this.getFieldValue(section, 'coordenadaX', pozo.identificacion.coordenadaX.value), leftX, colWidth, true);
-    this.renderField(ctx, 'Coordenada Y', this.getFieldValue(section, 'coordenadaY', pozo.identificacion.coordenadaY.value), rightX, colWidth, true);
+    this.renderField(ctx, 'Coordenada X', this.getFieldValue(section, 'coordenadaX', pozo.identificacion?.coordenadaX?.value || ''), leftX, colWidth, true);
+    this.renderField(ctx, 'Coordenada Y', this.getFieldValue(section, 'coordenadaY', pozo.identificacion?.coordenadaY?.value || ''), rightX, colWidth, true);
     ctx.currentY += PDF_CONFIG.lineHeight;
   }
 
@@ -235,15 +257,15 @@ export class PDFGenerator {
     const leftX = PDF_CONFIG.margin;
     const rightX = PDF_CONFIG.margin + colWidth;
     
-    // 🟠 Importantes
-    this.renderField(ctx, 'Dirección', this.getFieldValue(section, 'direccion', pozo.ubicacion.direccion.value), leftX, colWidth * 2, true);
+    // 🟠 Importantes - Usar acceso seguro a propiedades
+    this.renderField(ctx, 'Dirección', this.getFieldValue(section, 'direccion', pozo.ubicacion?.direccion?.value || ''), leftX, colWidth * 2, true);
     ctx.currentY += PDF_CONFIG.lineHeight;
     
-    this.renderField(ctx, 'Barrio', this.getFieldValue(section, 'barrio', pozo.ubicacion.barrio.value), leftX, colWidth, true);
-    this.renderField(ctx, 'Elevación (m)', this.getFieldValue(section, 'elevacion', pozo.ubicacion.elevacion.value), rightX, colWidth, true);
+    this.renderField(ctx, 'Barrio', this.getFieldValue(section, 'barrio', pozo.ubicacion?.barrio?.value || ''), leftX, colWidth, true);
+    this.renderField(ctx, 'Elevación (m)', this.getFieldValue(section, 'elevacion', pozo.ubicacion?.elevacion?.value || ''), rightX, colWidth, true);
     ctx.currentY += PDF_CONFIG.lineHeight;
     
-    this.renderField(ctx, 'Profundidad (m)', this.getFieldValue(section, 'profundidad', pozo.ubicacion.profundidad.value), leftX, colWidth, true);
+    this.renderField(ctx, 'Profundidad (m)', this.getFieldValue(section, 'profundidad', pozo.ubicacion?.profundidad?.value || ''), leftX, colWidth, true);
     ctx.currentY += PDF_CONFIG.lineHeight;
   }
 
@@ -253,7 +275,7 @@ export class PDFGenerator {
     const colWidth = (PDF_CONFIG.pageWidth - PDF_CONFIG.margin * 2) / 2;
     const leftX = PDF_CONFIG.margin;
     const rightX = PDF_CONFIG.margin + colWidth;
-    const comp = pozo.componentes;
+    const comp = pozo.componentes || {};
     
     // Sección 1: Tapa y Cilindro (Importantes)
     doc.setTextColor(customization.colors.sectionText);
@@ -262,19 +284,19 @@ export class PDFGenerator {
     doc.text('Tapa y Cilindro:', leftX, ctx.currentY);
     ctx.currentY += PDF_CONFIG.lineHeight;
     
-    this.renderField(ctx, 'Existe Tapa', this.getFieldValue(section, 'existeTapa', comp.existeTapa.value), leftX, colWidth, true);
-    this.renderField(ctx, 'Estado Tapa', this.getFieldValue(section, 'estadoTapa', comp.estadoTapa.value), rightX, colWidth, true);
+    this.renderField(ctx, 'Existe Tapa', this.getFieldValue(section, 'existeTapa', comp.existeTapa?.value || ''), leftX, colWidth, true);
+    this.renderField(ctx, 'Estado Tapa', this.getFieldValue(section, 'estadoTapa', comp.estadoTapa?.value || ''), rightX, colWidth, true);
     ctx.currentY += PDF_CONFIG.lineHeight;
     
-    this.renderField(ctx, 'Material Tapa', this.getFieldValue(section, 'materialTapa', comp.materialTapa.value), leftX, colWidth);
-    this.renderField(ctx, 'Existe Cilindro', this.getFieldValue(section, 'existeCilindro', comp.existeCilindro.value), rightX, colWidth, true);
+    this.renderField(ctx, 'Material Tapa', this.getFieldValue(section, 'materialTapa', comp.materialTapa?.value || ''), leftX, colWidth);
+    this.renderField(ctx, 'Existe Cilindro', this.getFieldValue(section, 'existeCilindro', comp.existeCilindro?.value || ''), rightX, colWidth, true);
     ctx.currentY += PDF_CONFIG.lineHeight;
     
-    this.renderField(ctx, 'Diámetro Cilindro (m)', this.getFieldValue(section, 'diametroCilindro', comp.diametroCilindro.value), leftX, colWidth, true);
-    this.renderField(ctx, 'Material Cilindro', this.getFieldValue(section, 'materialCilindro', comp.materialCilindro.value), rightX, colWidth);
+    this.renderField(ctx, 'Diámetro Cilindro (m)', this.getFieldValue(section, 'diametroCilindro', comp.diametroCilindro?.value || ''), leftX, colWidth, true);
+    this.renderField(ctx, 'Material Cilindro', this.getFieldValue(section, 'materialCilindro', comp.materialCilindro?.value || ''), rightX, colWidth);
     ctx.currentY += PDF_CONFIG.lineHeight;
     
-    this.renderField(ctx, 'Estado Cilindro', this.getFieldValue(section, 'estadoCilindro', comp.estadoCilindro.value), leftX, colWidth);
+    this.renderField(ctx, 'Estado Cilindro', this.getFieldValue(section, 'estadoCilindro', comp.estadoCilindro?.value || ''), leftX, colWidth);
     ctx.currentY += PDF_CONFIG.lineHeight;
     
     // Sección 2: Cono (Opcional)
@@ -284,12 +306,12 @@ export class PDFGenerator {
     doc.text('Cono:', leftX, ctx.currentY);
     ctx.currentY += PDF_CONFIG.lineHeight;
     
-    this.renderField(ctx, 'Existe Cono', this.getFieldValue(section, 'existeCono', comp.existeCono.value), leftX, colWidth);
-    this.renderField(ctx, 'Tipo Cono', this.getFieldValue(section, 'tipoCono', comp.tipoCono.value), rightX, colWidth);
+    this.renderField(ctx, 'Existe Cono', this.getFieldValue(section, 'existeCono', comp.existeCono?.value || ''), leftX, colWidth);
+    this.renderField(ctx, 'Tipo Cono', this.getFieldValue(section, 'tipoCono', comp.tipoCono?.value || ''), rightX, colWidth);
     ctx.currentY += PDF_CONFIG.lineHeight;
     
-    this.renderField(ctx, 'Material Cono', this.getFieldValue(section, 'materialCono', comp.materialCono.value), leftX, colWidth);
-    this.renderField(ctx, 'Estado Cono', this.getFieldValue(section, 'estadoCono', comp.estadoCono.value), rightX, colWidth);
+    this.renderField(ctx, 'Material Cono', this.getFieldValue(section, 'materialCono', comp.materialCono?.value || ''), leftX, colWidth);
+    this.renderField(ctx, 'Estado Cono', this.getFieldValue(section, 'estadoCono', comp.estadoCono?.value || ''), rightX, colWidth);
     ctx.currentY += PDF_CONFIG.lineHeight;
     
     // Sección 3: Cañuela (Opcional)
@@ -299,11 +321,11 @@ export class PDFGenerator {
     doc.text('Cañuela:', leftX, ctx.currentY);
     ctx.currentY += PDF_CONFIG.lineHeight;
     
-    this.renderField(ctx, 'Existe Cañuela', this.getFieldValue(section, 'existeCanuela', comp.existeCanuela.value), leftX, colWidth);
-    this.renderField(ctx, 'Material Cañuela', this.getFieldValue(section, 'materialCanuela', comp.materialCanuela.value), rightX, colWidth);
+    this.renderField(ctx, 'Existe Cañuela', this.getFieldValue(section, 'existeCanuela', comp.existeCanuela?.value || ''), leftX, colWidth);
+    this.renderField(ctx, 'Material Cañuela', this.getFieldValue(section, 'materialCanuela', comp.materialCanuela?.value || ''), rightX, colWidth);
     ctx.currentY += PDF_CONFIG.lineHeight;
     
-    this.renderField(ctx, 'Estado Cañuela', this.getFieldValue(section, 'estadoCanuela', comp.estadoCanuela.value), leftX, colWidth);
+    this.renderField(ctx, 'Estado Cañuela', this.getFieldValue(section, 'estadoCanuela', comp.estadoCanuela?.value || ''), leftX, colWidth);
     ctx.currentY += PDF_CONFIG.lineHeight;
     
     // Sección 4: Peldaños (Opcional)
@@ -313,12 +335,12 @@ export class PDFGenerator {
     doc.text('Peldaños:', leftX, ctx.currentY);
     ctx.currentY += PDF_CONFIG.lineHeight;
     
-    this.renderField(ctx, 'Existe Peldaños', this.getFieldValue(section, 'existePeldanos', comp.existePeldanos.value), leftX, colWidth);
-    this.renderField(ctx, 'Número Peldaños', this.getFieldValue(section, 'numeroPeldanos', comp.numeroPeldanos.value), rightX, colWidth);
+    this.renderField(ctx, 'Existe Peldaños', this.getFieldValue(section, 'existePeldanos', comp.existePeldanos?.value || ''), leftX, colWidth);
+    this.renderField(ctx, 'Número Peldaños', this.getFieldValue(section, 'numeroPeldanos', comp.numeroPeldanos?.value || ''), rightX, colWidth);
     ctx.currentY += PDF_CONFIG.lineHeight;
     
-    this.renderField(ctx, 'Material Peldaños', this.getFieldValue(section, 'materialPeldanos', comp.materialPeldanos.value), leftX, colWidth);
-    this.renderField(ctx, 'Estado Peldaños', this.getFieldValue(section, 'estadoPeldanos', comp.estadoPeldanos.value), rightX, colWidth);
+    this.renderField(ctx, 'Material Peldaños', this.getFieldValue(section, 'materialPeldanos', comp.materialPeldanos?.value || ''), leftX, colWidth);
+    this.renderField(ctx, 'Estado Peldaños', this.getFieldValue(section, 'estadoPeldanos', comp.estadoPeldanos?.value || ''), rightX, colWidth);
     ctx.currentY += PDF_CONFIG.lineHeight;
     
     // Sección 5: Información General (Opcional)
@@ -328,12 +350,12 @@ export class PDFGenerator {
     doc.text('Información General:', leftX, ctx.currentY);
     ctx.currentY += PDF_CONFIG.lineHeight;
     
-    this.renderField(ctx, 'Sistema', this.getFieldValue(section, 'sistema', comp.sistema.value), leftX, colWidth);
-    this.renderField(ctx, 'Año Instalación', this.getFieldValue(section, 'anoInstalacion', comp.anoInstalacion.value), rightX, colWidth);
+    this.renderField(ctx, 'Sistema', this.getFieldValue(section, 'sistema', comp.sistema?.value || ''), leftX, colWidth);
+    this.renderField(ctx, 'Año Instalación', this.getFieldValue(section, 'anoInstalacion', comp.anoInstalacion?.value || ''), rightX, colWidth);
     ctx.currentY += PDF_CONFIG.lineHeight;
     
-    this.renderField(ctx, 'Tipo Cámara', this.getFieldValue(section, 'tipoCamara', comp.tipoCamara.value), leftX, colWidth);
-    this.renderField(ctx, 'Estructura Pavimento', this.getFieldValue(section, 'estructuraPavimento', comp.estructuraPavimento.value), rightX, colWidth);
+    this.renderField(ctx, 'Tipo Cámara', this.getFieldValue(section, 'tipoCamara', comp.tipoCamara?.value || ''), leftX, colWidth);
+    this.renderField(ctx, 'Estructura Pavimento', this.getFieldValue(section, 'estructuraPavimento', comp.estructuraPavimento?.value || ''), rightX, colWidth);
     ctx.currentY += PDF_CONFIG.lineHeight;
   }
 
@@ -343,7 +365,7 @@ export class PDFGenerator {
     const { doc, customization } = ctx;
     const { colors, fonts } = customization;
     
-    if (!pozo.tuberias.tuberias || pozo.tuberias.tuberias.length === 0) {
+    if (!pozo.tuberias?.tuberias || pozo.tuberias.tuberias.length === 0) {
       doc.setTextColor(colors.labelText);
       doc.setFontSize(fonts.valueSize);
       doc.text('Sin tuberías registradas', PDF_CONFIG.margin, ctx.currentY);
@@ -352,8 +374,8 @@ export class PDFGenerator {
     }
     
     // Separar entradas y salidas
-    const entradas = pozo.tuberias.tuberias.filter(t => t.tipoTuberia.value === 'entrada');
-    const salidas = pozo.tuberias.tuberias.filter(t => t.tipoTuberia.value === 'salida');
+    const entradas = pozo.tuberias.tuberias.filter(t => t.tipoTuberia?.value === 'entrada');
+    const salidas = pozo.tuberias.tuberias.filter(t => t.tipoTuberia?.value === 'salida');
     
     if (entradas.length > 0) {
       doc.setTextColor(colors.sectionText);
@@ -414,7 +436,7 @@ export class PDFGenerator {
     const { doc, customization } = ctx;
     const { colors, fonts } = customization;
     
-    if (!pozo.sumideros.sumideros || pozo.sumideros.sumideros.length === 0) {
+    if (!pozo.sumideros?.sumideros || pozo.sumideros.sumideros.length === 0) {
       doc.setTextColor(colors.labelText);
       doc.setFontSize(fonts.valueSize);
       doc.text('Sin sumideros registrados', PDF_CONFIG.margin, ctx.currentY);
@@ -464,7 +486,7 @@ export class PDFGenerator {
 
   private async renderFotosSection(ctx: RenderContext, _section: FichaSection, pozo: Pozo): Promise<void> {
     this.renderSectionTitle(ctx, 'REGISTRO FOTOGRAFICO');
-    const allPhotos = pozo.fotos.fotos || [];
+    const allPhotos = pozo.fotos?.fotos || [];
     
     if (allPhotos.length === 0) {
       const { doc, customization } = ctx;
@@ -551,7 +573,7 @@ export class PDFGenerator {
   private renderObservacionesSection(ctx: RenderContext, section: FichaSection, pozo: Pozo): void {
     this.renderSectionTitle(ctx, 'OBSERVACIONES');
     const { doc, customization } = ctx;
-    const observaciones = this.getFieldValue(section, 'observaciones', pozo.observaciones.observaciones.value);
+    const observaciones = this.getFieldValue(section, 'observaciones', pozo.observaciones?.observaciones?.value || '');
     doc.setTextColor(customization.colors.valueText);
     doc.setFontSize(customization.fonts.valueSize);
     const maxWidth = PDF_CONFIG.pageWidth - PDF_CONFIG.margin * 2;

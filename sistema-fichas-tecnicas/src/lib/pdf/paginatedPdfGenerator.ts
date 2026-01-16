@@ -48,7 +48,7 @@ export class PaginatedPDFGenerator {
    */
   async generatePaginatedPDF(
     ficha: FichaState,
-    pozo: Pozo,
+    pozo: any,
     options?: {
       watermark?: string;
       pageNumbers?: boolean;
@@ -94,9 +94,20 @@ export class PaginatedPDFGenerator {
     }
 
     const blob = doc.output('blob');
+    
+    // FIX: Problema #3 - Extraer pozoId de forma robusta
+    let pozoIdForFilename = 'ficha';
+    if (pozo.identificacion?.idPozo?.value) {
+      pozoIdForFilename = pozo.identificacion.idPozo.value;
+    } else if (pozo.idPozo?.value) {
+      pozoIdForFilename = pozo.idPozo.value;
+    } else if (typeof pozo.idPozo === 'string') {
+      pozoIdForFilename = pozo.idPozo;
+    }
+    
     return {
       blob,
-      filename: `ficha_${pozo.identificacion.idPozo.value}_${Date.now()}.pdf`,
+      filename: `ficha_${pozoIdForFilename}_${Date.now()}.pdf`,
       pageCount: ctx.pageNumber,
     };
   }
@@ -104,7 +115,7 @@ export class PaginatedPDFGenerator {
   /**
    * Renderiza la primera página con información general
    */
-  private renderFirstPage(ctx: RenderContext, pozo: Pozo): void {
+  private renderFirstPage(ctx: RenderContext, pozo: any): void {
     const { doc } = ctx;
 
     // Encabezado
@@ -117,7 +128,20 @@ export class PaginatedPDFGenerator {
       align: 'center',
     });
     doc.setFontSize(12);
-    const pozoId = typeof pozo.idPozo === 'string' ? pozo.idPozo : pozo.idPozo.value;
+    
+    // FIX: Problema #3 - Soportar múltiples formatos de pozoId (PZ, M, etc.)
+    // El pozo puede tener estructura plana (pozo.idPozo) o jerárquica (pozo.identificacion.idPozo)
+    let pozoId = '';
+    if (pozo.identificacion?.idPozo?.value) {
+      pozoId = pozo.identificacion.idPozo.value;
+    } else if (pozo.idPozo?.value) {
+      pozoId = pozo.idPozo.value;
+    } else if (typeof pozo.idPozo === 'string') {
+      pozoId = pozo.idPozo;
+    } else if (typeof pozo.identificacion?.idPozo === 'string') {
+      pozoId = pozo.identificacion.idPozo;
+    }
+    
     doc.text(`Pozo: ${pozoId}`, PDF_CONFIG.pageWidth / 2, 18, {
       align: 'center',
     });
@@ -133,21 +157,21 @@ export class PaginatedPDFGenerator {
     const leftX = PDF_CONFIG.margin;
     const rightX = PDF_CONFIG.margin + colWidth;
 
-    this.renderField(ctx, 'ID Pozo', this.extractValue(pozo.idPozo), leftX, colWidth);
+    this.renderField(ctx, 'ID Pozo', this.extractValue(pozo.idPozo || pozo.identificacion?.idPozo), leftX, colWidth);
     this.renderField(
       ctx,
       'Levantó',
-      this.extractValue(pozo.levanto),
+      this.extractValue(pozo.levanto || pozo.identificacion?.levanto),
       rightX,
       colWidth
     );
     ctx.currentY += PDF_CONFIG.lineHeight;
 
-    this.renderField(ctx, 'Fecha', this.extractValue(pozo.fecha), leftX, colWidth);
+    this.renderField(ctx, 'Fecha', this.extractValue(pozo.fecha || pozo.identificacion?.fecha), leftX, colWidth);
     this.renderField(
       ctx,
       'Estado',
-      this.extractValue(pozo.estado),
+      this.extractValue(pozo.estado || pozo.identificacion?.estado),
       rightX,
       colWidth
     );

@@ -87,7 +87,7 @@ export function TextEditor({
   variant = 'default',
 }: TextEditorProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [localValue, setLocalValue] = useState(fieldValue.value);
+  const [localValue, setLocalValue] = useState(fieldValue?.value || '');
   const [showTooltip, setShowTooltip] = useState(false);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -95,9 +95,9 @@ export function TextEditor({
   // Sync local value with prop
   useEffect(() => {
     if (!isEditing) {
-      setLocalValue(fieldValue.value);
+      setLocalValue(fieldValue?.value || '');
     }
-  }, [fieldValue.value, isEditing]);
+  }, [fieldValue?.value, isEditing]);
 
   // Focus input when entering edit mode
   useEffect(() => {
@@ -121,10 +121,10 @@ export function TextEditor({
 
   const handleBlur = useCallback(() => {
     setIsEditing(false);
-    if (localValue !== fieldValue.value) {
+    if (localValue !== (fieldValue?.value || '')) {
       onCommit?.(localValue);
     }
-  }, [localValue, fieldValue.value, onCommit]);
+  }, [localValue, fieldValue?.value, onCommit]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !multiline) {
@@ -132,14 +132,14 @@ export function TextEditor({
       handleBlur();
     }
     if (e.key === 'Escape') {
-      setLocalValue(fieldValue.value);
+      setLocalValue(fieldValue?.value || '');
       setIsEditing(false);
     }
-  }, [multiline, handleBlur, fieldValue.value]);
+  }, [multiline, handleBlur, fieldValue?.value]);
 
-  const sourceStyle = sourceConfig[fieldValue.source];
-  const hasBeenModified = fieldValue.source === 'manual' && fieldValue.originalValue !== undefined;
-  const isValueEmpty = !fieldValue.value || fieldValue.value.trim() === '';
+  const sourceStyle = sourceConfig[fieldValue?.source || 'manual'];
+  const hasBeenModified = fieldValue?.source === 'manual' && fieldValue?.originalValue !== undefined;
+  const isValueEmpty = !fieldValue?.value || fieldValue?.value.trim() === '';
 
   // Format timestamp for display
   const formatTimestamp = (timestamp?: number) => {
@@ -212,9 +212,9 @@ export function TextEditor({
         ) : (
           // Display mode
           <div className={`${sizeConfig[size]} ${isValueEmpty ? 'text-gray-400 italic' : ''}`}>
-            {isValueEmpty ? placeholder : fieldValue.value}
-            {multiline && fieldValue.value && (
-              <div className="whitespace-pre-wrap">{fieldValue.value}</div>
+            {isValueEmpty ? placeholder : fieldValue?.value}
+            {multiline && fieldValue?.value && (
+              <div className="whitespace-pre-wrap">{fieldValue?.value}</div>
             )}
           </div>
         )}

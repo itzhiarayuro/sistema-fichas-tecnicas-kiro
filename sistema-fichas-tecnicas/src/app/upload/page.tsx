@@ -20,6 +20,7 @@ import { AppShell, NextStepIndicator, ProgressBar } from '@/components/layout';
 import { validateFile, isExcelFile, isImageFile } from '@/lib/validators';
 import { parseExcelFile, getParseResultSummary } from '@/lib/parsers/excelParser';
 import { parseNomenclatura } from '@/lib/parsers/nomenclatura';
+import { associatePhotosWithPozos } from '@/lib/helpers/fotoAssociationHelper';
 import { useGlobalStore } from '@/stores/globalStore';
 import { useUIStore } from '@/stores/uiStore';
 import type { Pozo, FotoInfo } from '@/types';
@@ -265,11 +266,22 @@ export default function UploadPage() {
     setProcessedPhotos(prev => [...prev, ...allPhotos]);
     setFiles(prev => [...prev, ...fileItems]);
     
-    // Guardar pozos en el store global inmediatamente
+    // FIX: Problema #2 - Asociar fotos con pozos
+    // Las fotos se guardaban en el store pero no se asociaban con los pozos
+    // Solución: Usar associatePhotosWithPozos para llenar pozo.fotos
     if (allPozos.length > 0) {
       const existingPozos = Array.from(pozos.values());
       const mergedPozos = [...existingPozos, ...allPozos];
-      useGlobalStore.setState({ pozos: new Map(mergedPozos.map(p => [p.id, p])) });
+      
+      // Crear un Map temporal de fotos para la asociación
+      const fotosMap = new Map<string, FotoInfo>();
+      allPhotos.forEach(foto => fotosMap.set(foto.id, foto));
+      
+      // Asociar fotos con pozos
+      const pozosConFotos = associatePhotosWithPozos(mergedPozos, fotosMap);
+      
+      // Guardar en el store
+      useGlobalStore.setState({ pozos: new Map(pozosConFotos.map(p => [p.id, p])) });
     }
     
     // Finalizar
@@ -302,15 +314,51 @@ export default function UploadPage() {
    * Continúa al siguiente paso
    */
   const handleContinue = useCallback(() => {
-    // Agregar fotos en stores si hay
+    // FIX: Problema #2 - Validar que fotos se asocien correctamente
+    // Antes de agregar fotos, verificar que se pueden asociar con pozos
     if (processedPhotos.length > 0) {
-      processedPhotos.forEach(photo => addPhoto(photo));
+      const fotosAsociadas: FotoInfo[] = [];
+      const fotosNoAsociadas: FotoInfo[] = [];
+      
+      processedPhotos.forEach(foto => {
+        // Extraer código del pozo del filename
+        const codigoMatch = foto.filename?.match(/^([A-Z]\d+)/);
+        if (codigoMatch) {
+          const codigo = codigoMatch[1];
+          // Verificar si existe un pozo con este código
+          const pozoExiste = processedPozos.some(p => {
+            const pozoCode = typeof p.idPozo === 'string' ? p.idPozo : p.idPozo?.value;
+            return pozoCode === codigo;
+          });
+          
+          if (pozoExiste) {
+            fotosAsociadas.push(foto);
+            addPhoto(foto);
+          } else {
+            fotosNoAsociadas.push(foto);
+          }
+        } else {
+          fotosNoAsociadas.push(foto);
+        }
+      });
+      
+      // Mostrar advertencia si hay fotos no asociadas
+      if (fotosNoAsociadas.length > 0) {
+        showWarning(
+          `${fotosNoAsociadas.length} foto(s) no pudieron asociarse con pozos. ` +
+          `Verifica la nomenclatura: ${fotosNoAsociadas.map(f => f.filename).join(', ')}`
+        );
+      }
+      
+      if (fotosAsociadas.length > 0) {
+        showSuccess(`${fotosAsociadas.length} foto(s) asociadas correctamente`);
+      }
     }
     
     // Navegar a la página de pozos
     setCurrentStep('review');
     router.push('/pozos');
-  }, [processedPhotos, addPhoto, setCurrentStep, router]);
+  }, [processedPhotos, processedPozos, addPhoto, setCurrentStep, router, showWarning, showSuccess]);
 
   /**
    * Reinicia la carga

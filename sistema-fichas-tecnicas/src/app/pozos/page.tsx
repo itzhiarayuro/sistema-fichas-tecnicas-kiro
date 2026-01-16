@@ -487,10 +487,10 @@ function PozoPreviewPanel({
         </div>
         
         {/* Observaciones */}
-        {pozo.observaciones?.value && (
+        {getFieldValueOrDefault(pozo.observaciones) && (
           <div className="bg-gray-50 rounded-lg p-4">
             <h4 className="font-medium text-gray-900 mb-2">Observaciones</h4>
-            <p className="text-sm text-gray-700">{pozo.observaciones.value}</p>
+            <p className="text-sm text-gray-700">{getFieldValueOrDefault(pozo.observaciones)}</p>
           </div>
         )}
       </div>

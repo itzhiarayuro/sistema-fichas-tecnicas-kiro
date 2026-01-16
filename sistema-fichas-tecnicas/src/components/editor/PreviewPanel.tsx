@@ -18,6 +18,25 @@ import { useMemo } from 'react';
 import type { FichaState, FichaSection, FieldValue, FichaCustomization } from '@/types/ficha';
 import type { Pozo, FotoInfo } from '@/types/pozo';
 
+/**
+ * Obtiene el valor de un campo de forma segura
+ */
+function getSafeFieldValue(field: any): string {
+  if (!field) return '';
+  if (typeof field === 'string') return field;
+  if (field.value) return field.value;
+  return '';
+}
+
+/**
+ * Verifica si un campo ha sido editado
+ */
+function isFieldEdited(field: any): boolean {
+  if (!field) return false;
+  if (typeof field === 'string') return false;
+  return field.isEdited || false;
+}
+
 interface PreviewPanelProps {
   /** Estado de la ficha (sincronizado) */
   fichaState?: FichaState | null;
@@ -214,13 +233,13 @@ export function PreviewPanel({
                   color: styles.colors.sectionText,
                 }}
               >
-                {identificacion.codigo.value}
-                {identificacion.codigo.isEdited && showEditIndicators && (
+                {getSafeFieldValue(identificacion.codigo)}
+                {isFieldEdited(identificacion.codigo) && showEditIndicators && (
                   <span className="ml-1 inline-block w-1.5 h-1.5 bg-amber-500 rounded-full" />
                 )}
               </p>
               <p style={{ fontSize: styles.fonts.labelSize, color: styles.colors.labelText }}>
-                {identificacion.fecha.value}
+                {getSafeFieldValue(identificacion.fecha)}
               </p>
             </div>
           </div>
@@ -244,38 +263,38 @@ export function PreviewPanel({
           >
             <FieldDisplay 
               label="Código" 
-              value={identificacion.codigo.value} 
-              isEdited={identificacion.codigo.isEdited}
+              value={getSafeFieldValue(identificacion.codigo)} 
+              isEdited={isFieldEdited(identificacion.codigo)}
               showIndicator={showEditIndicators}
             />
             <FieldDisplay 
               label="Sistema" 
-              value={identificacion.sistema.value} 
-              isEdited={identificacion.sistema.isEdited}
+              value={getSafeFieldValue(identificacion.sistema)} 
+              isEdited={isFieldEdited(identificacion.sistema)}
               showIndicator={showEditIndicators}
             />
             <FieldDisplay 
               label="Dirección" 
-              value={identificacion.direccion.value} 
-              isEdited={identificacion.direccion.isEdited}
+              value={getSafeFieldValue(identificacion.direccion)} 
+              isEdited={isFieldEdited(identificacion.direccion)}
               showIndicator={showEditIndicators}
             />
             <FieldDisplay 
               label="Barrio" 
-              value={identificacion.barrio.value} 
-              isEdited={identificacion.barrio.isEdited}
+              value={getSafeFieldValue(identificacion.barrio)} 
+              isEdited={isFieldEdited(identificacion.barrio)}
               showIndicator={showEditIndicators}
             />
             <FieldDisplay 
               label="Estado" 
-              value={identificacion.estado.value} 
-              isEdited={identificacion.estado.isEdited}
+              value={getSafeFieldValue(identificacion.estado)} 
+              isEdited={isFieldEdited(identificacion.estado)}
               showIndicator={showEditIndicators}
             />
             <FieldDisplay 
               label="Fecha" 
-              value={identificacion.fecha.value} 
-              isEdited={identificacion.fecha.isEdited}
+              value={getSafeFieldValue(identificacion.fecha)} 
+              isEdited={isFieldEdited(identificacion.fecha)}
               showIndicator={showEditIndicators}
             />
           </div>
@@ -299,61 +318,61 @@ export function PreviewPanel({
           >
             <FieldDisplay 
               label="Altura Total" 
-              value={estructura.alturaTotal.value} 
-              isEdited={estructura.alturaTotal.isEdited}
+              value={getSafeFieldValue(estructura.alturaTotal)} 
+              isEdited={isFieldEdited(estructura.alturaTotal)}
               showIndicator={showEditIndicators}
               suffix="m"
             />
             <FieldDisplay 
               label="Rasante" 
-              value={estructura.rasante.value} 
-              isEdited={estructura.rasante.isEdited}
+              value={getSafeFieldValue(estructura.rasante)} 
+              isEdited={isFieldEdited(estructura.rasante)}
               showIndicator={showEditIndicators}
               suffix="m"
             />
             <FieldDisplay 
               label="Tapa Material" 
-              value={estructura.tapaMaterial.value} 
-              isEdited={estructura.tapaMaterial.isEdited}
+              value={getSafeFieldValue(estructura.tapaMaterial)} 
+              isEdited={isFieldEdited(estructura.tapaMaterial)}
               showIndicator={showEditIndicators}
             />
             <FieldDisplay 
               label="Tapa Estado" 
-              value={estructura.tapaEstado.value} 
-              isEdited={estructura.tapaEstado.isEdited}
+              value={getSafeFieldValue(estructura.tapaEstado)} 
+              isEdited={isFieldEdited(estructura.tapaEstado)}
               showIndicator={showEditIndicators}
             />
             <FieldDisplay 
               label="Cono Tipo" 
-              value={estructura.conoTipo.value} 
-              isEdited={estructura.conoTipo.isEdited}
+              value={getSafeFieldValue(estructura.conoTipo)} 
+              isEdited={isFieldEdited(estructura.conoTipo)}
               showIndicator={showEditIndicators}
             />
             <FieldDisplay 
               label="Cono Material" 
-              value={estructura.conoMaterial.value} 
-              isEdited={estructura.conoMaterial.isEdited}
+              value={getSafeFieldValue(estructura.conoMaterial)} 
+              isEdited={isFieldEdited(estructura.conoMaterial)}
               showIndicator={showEditIndicators}
             />
             <FieldDisplay 
               label="Diámetro Cuerpo" 
-              value={estructura.cuerpoDiametro.value} 
-              isEdited={estructura.cuerpoDiametro.isEdited}
+              value={getSafeFieldValue(estructura.cuerpoDiametro)} 
+              isEdited={isFieldEdited(estructura.cuerpoDiametro)}
               showIndicator={showEditIndicators}
               suffix="m"
             />
             <FieldDisplay 
               label="Canuela Material" 
-              value={estructura.canuelaMaterial.value} 
-              isEdited={estructura.canuelaMaterial.isEdited}
+              value={getSafeFieldValue(estructura.canuelaMaterial)} 
+              isEdited={isFieldEdited(estructura.canuelaMaterial)}
               showIndicator={showEditIndicators}
             />
             <div className="col-span-2">
               <span className="text-gray-500">Peldaños:</span>
-              <span className={`ml-2 font-medium ${estructura.peldanosCantidad.isEdited && showEditIndicators ? 'text-amber-700' : ''}`}>
-                {estructura.peldanosCantidad.value || '0'} ({estructura.peldanosMaterial.value || 'N/A'})
+              <span className={`ml-2 font-medium ${(isFieldEdited(estructura.peldanosCantidad) || isFieldEdited(estructura.peldanosMaterial)) && showEditIndicators ? 'text-amber-700' : ''}`}>
+                {getSafeFieldValue(estructura.peldanosCantidad) || '0'} ({getSafeFieldValue(estructura.peldanosMaterial) || 'N/A'})
               </span>
-              {(estructura.peldanosCantidad.isEdited || estructura.peldanosMaterial.isEdited) && showEditIndicators && (
+              {(isFieldEdited(estructura.peldanosCantidad) || isFieldEdited(estructura.peldanosMaterial)) && showEditIndicators && (
                 <span className="ml-1 inline-block w-1.5 h-1.5 bg-amber-500 rounded-full" />
               )}
             </div>
@@ -376,17 +395,17 @@ export function PreviewPanel({
             <div>
               <h3 className="font-medium text-gray-700 mb-2">
                 Entradas ({Array.isArray(pozo.tuberias) ? pozo.tuberias.filter((t: any) => {
-                  const tipo = typeof t.tipoTuberia === 'string' ? t.tipoTuberia : t.tipoTuberia?.value;
+                  const tipo = getSafeFieldValue(t.tipoTuberia);
                   return tipo === 'entrada';
                 }).length : 0})
               </h3>
               {Array.isArray(pozo.tuberias) && pozo.tuberias.filter((t: any) => {
-                const tipo = typeof t.tipoTuberia === 'string' ? t.tipoTuberia : t.tipoTuberia?.value;
+                const tipo = getSafeFieldValue(t.tipoTuberia);
                 return tipo === 'entrada';
               }).length > 0 ? (
                 <div className="space-y-2">
                   {pozo.tuberias.filter((t: any) => {
-                    const tipo = typeof t.tipoTuberia === 'string' ? t.tipoTuberia : t.tipoTuberia?.value;
+                    const tipo = getSafeFieldValue(t.tipoTuberia);
                     return tipo === 'entrada';
                   }).map((t: any, i: number) => (
                     <div 
@@ -394,7 +413,7 @@ export function PreviewPanel({
                       className="bg-gray-50 p-2 rounded"
                       style={{ fontSize: styles.fonts.valueSize }}
                     >
-                      <span className="font-medium">E{i + 1}:</span> Ø{typeof t.diametro === 'string' ? t.diametro : t.diametro?.value}mm, {typeof t.material === 'string' ? t.material : t.material?.value}, Cota: {typeof t.cota === 'string' ? t.cota : t.cota?.value}m
+                      <span className="font-medium">E{i + 1}:</span> Ø{getSafeFieldValue(t.diametro)}mm, {getSafeFieldValue(t.material)}, Cota: {getSafeFieldValue(t.cota)}m
                     </div>
                   ))}
                 </div>
@@ -407,17 +426,17 @@ export function PreviewPanel({
             <div>
               <h3 className="font-medium text-gray-700 mb-2">
                 Salidas ({Array.isArray(pozo.tuberias) ? pozo.tuberias.filter((t: any) => {
-                  const tipo = typeof t.tipoTuberia === 'string' ? t.tipoTuberia : t.tipoTuberia?.value;
+                  const tipo = getSafeFieldValue(t.tipoTuberia);
                   return tipo === 'salida';
                 }).length : 0})
               </h3>
               {Array.isArray(pozo.tuberias) && pozo.tuberias.filter((t: any) => {
-                const tipo = typeof t.tipoTuberia === 'string' ? t.tipoTuberia : t.tipoTuberia?.value;
+                const tipo = getSafeFieldValue(t.tipoTuberia);
                 return tipo === 'salida';
               }).length > 0 ? (
                 <div className="space-y-2">
                   {pozo.tuberias.filter((t: any) => {
-                    const tipo = typeof t.tipoTuberia === 'string' ? t.tipoTuberia : t.tipoTuberia?.value;
+                    const tipo = getSafeFieldValue(t.tipoTuberia);
                     return tipo === 'salida';
                   }).map((t: any, i: number) => (
                     <div 
@@ -425,7 +444,7 @@ export function PreviewPanel({
                       className="bg-gray-50 p-2 rounded"
                       style={{ fontSize: styles.fonts.valueSize }}
                     >
-                      <span className="font-medium">S{i + 1}:</span> Ø{typeof t.diametro === 'string' ? t.diametro : t.diametro?.value}mm, {typeof t.material === 'string' ? t.material : t.material?.value}, Cota: {typeof t.cota === 'string' ? t.cota : t.cota?.value}m
+                      <span className="font-medium">S{i + 1}:</span> Ø{getSafeFieldValue(t.diametro)}mm, {getSafeFieldValue(t.material)}, Cota: {getSafeFieldValue(t.cota)}m
                     </div>
                   ))}
                 </div>
@@ -451,11 +470,11 @@ export function PreviewPanel({
             4. OBSERVACIONES
           </h2>
           <p 
-            className={observaciones.isEdited && showEditIndicators ? 'text-amber-700' : 'text-gray-700'}
+            className={isFieldEdited(observaciones) && showEditIndicators ? 'text-amber-700' : 'text-gray-700'}
             style={{ fontSize: styles.fonts.valueSize }}
           >
-            {observaciones.value || <span className="text-gray-400 italic">Sin observaciones</span>}
-            {observaciones.isEdited && showEditIndicators && (
+            {getSafeFieldValue(observaciones) || <span className="text-gray-400 italic">Sin observaciones</span>}
+            {isFieldEdited(observaciones) && showEditIndicators && (
               <span className="ml-1 inline-block w-1.5 h-1.5 bg-amber-500 rounded-full" />
             )}
           </p>

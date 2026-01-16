@@ -76,7 +76,7 @@ export function ObservacionesSection({
         {/* Contador de caracteres */}
         {!locked && (
           <div className="mt-2 text-xs text-gray-400 text-right">
-            {observaciones.value.length} caracteres
+            {(observaciones?.value || '').length} caracteres
           </div>
         )}
       </div>

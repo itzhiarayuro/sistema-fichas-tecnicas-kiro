@@ -109,10 +109,16 @@ function countFotos(pozo: Pozo): number {
 // Helper function to count photos in global store
 function countFotosGlobales(pozoId: string, fotosGlobales: Map<string, any>): number {
   let count = 0;
+  
+  // FIX: Problema #2 - Extraer código del pozoId correctamente
+  // pozoId viene como "pozo-M680-1234567890-0", necesitamos extraer "M680"
+  const codigoMatch = pozoId.match(/^(?:pozo-)?([A-Z]\d+)/);
+  const codigo = codigoMatch ? codigoMatch[1] : pozoId;
+  
   fotosGlobales.forEach((foto) => {
     // Extract codigo from filename (e.g., M680-P.jpg -> M680)
-    const match = foto.filename.match(/^([A-Z]\d+)/);
-    if (match && match[1].toUpperCase() === pozoId.toUpperCase()) {
+    const match = foto.filename?.match(/^([A-Z]\d+)/);
+    if (match && match[1].toUpperCase() === codigo.toUpperCase()) {
       count++;
     }
   });

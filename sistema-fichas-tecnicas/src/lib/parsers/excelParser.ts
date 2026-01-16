@@ -835,9 +835,11 @@ function parseRow(
    * Obtiene el MEJOR valor no vacío de un campo
    * Busca en TODAS las columnas que mapean al campo y retorna el primer valor no vacío
    * Esto soluciona el problema de columnas vacías que "ocultan" datos válidos
+   * MEJORADO: Con logging y validación inteligente para idPozo
    */
   const getValue = (field: string): string => {
     let bestValue = '';
+    let sourceColumn = '';
     
     // Buscar en todas las columnas que mapean a este campo
     for (const [col, mapped] of Object.entries(columnMapping)) {
@@ -847,8 +849,21 @@ function parseRow(
         
         // Si encontramos un valor no vacío, usarlo
         if (stringValue && stringValue.trim() !== '') {
-          bestValue = stringValue;
-          break; // Usar el primer valor no vacío encontrado
+          // Para idPozo, aplicar validación adicional
+          if (field === 'idPozo') {
+            // Rechazar valores que sean solo una letra
+            if (stringValue.length >= 2 && !/^[A-Z]$/.test(stringValue.toUpperCase())) {
+              bestValue = stringValue;
+              sourceColumn = col;
+              break;
+            }
+            // Si es una sola letra, continuar buscando
+            continue;
+          } else {
+            bestValue = stringValue;
+            sourceColumn = col;
+            break;
+          }
         }
       }
     }
@@ -861,11 +876,28 @@ function parseRow(
         if (row[variation] !== undefined) {
           const stringValue = safeStringValue(row[variation]);
           if (stringValue && stringValue.trim() !== '') {
-            bestValue = stringValue;
-            break;
+            // Para idPozo, aplicar validación adicional
+            if (field === 'idPozo') {
+              if (stringValue.length >= 2 && !/^[A-Z]$/.test(stringValue.toUpperCase())) {
+                bestValue = stringValue;
+                sourceColumn = variation;
+                break;
+              }
+              continue;
+            } else {
+              bestValue = stringValue;
+              sourceColumn = variation;
+              break;
+            }
           }
         }
       }
+    }
+    
+    // Logging para debugging (solo para idPozo)
+    if (field === 'idPozo' && (bestValue === 'M' || bestValue.length === 1)) {
+      console.warn(`⚠️ Fila ${index + 2}: ID de pozo sospechoso "${bestValue}" desde columna "${sourceColumn}"`);
+      console.warn(`   Datos de fila:`, Object.keys(row).map(k => `${k}="${row[k]}"`).join(', '));
     }
     
     return bestValue;
@@ -885,6 +917,34 @@ function parseRow(
       row: index + 2,
     });
     return null;
+  }
+  
+  // NUEVA VALIDACIÓN: Rechazar IDs de pozo que sean solo una letra o muy cortos
+  if (idPozo.length < 2 || /^[A-Z]$/.test(idPozo.toUpperCase())) {
+    result.parseErrors.push({
+      type: ErrorType.DATA,
+      severity: ErrorSeverity.WARNING,
+      message: `Row ${index + 2}: Invalid idPozo format - too short or single letter`,
+      userMessage: `Fila ${index + 2}: ID del pozo "${idPozo}" parece inválido (muy corto o una sola letra)`,
+      row: index + 2,
+      field: 'idPozo',
+      value: idPozo,
+    });
+    return null;
+  }
+  
+  // NUEVA VALIDACIÓN: Advertir si el ID no sigue el patrón esperado PZ + números
+  if (!/^PZ\d+$/i.test(idPozo) && !/^\d+$/.test(idPozo)) {
+    result.parseErrors.push({
+      type: ErrorType.DATA,
+      severity: ErrorSeverity.WARNING,
+      message: `Row ${index + 2}: Unusual idPozo format`,
+      userMessage: `Fila ${index + 2}: ID del pozo "${idPozo}" no sigue el formato esperado (PZ + números)`,
+      row: index + 2,
+      field: 'idPozo',
+      value: idPozo,
+    });
+    // No retornar null - solo advertir, permitir el ID
   }
   
   // Campos opcionales - obtener valores con fallback a vacío

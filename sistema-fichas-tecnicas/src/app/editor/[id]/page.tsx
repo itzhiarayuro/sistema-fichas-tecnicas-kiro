@@ -43,6 +43,7 @@ import { AppShell, WorkflowBreadcrumbs, NextStepIndicator } from '@/components/l
 import { useGlobalStore, useUIStore, type Template } from '@/stores';
 import { createFichaStore, type FichaStore } from '@/stores/fichaStore';
 import { useSyncEngine, type SyncConflict } from '@/lib/sync';
+import { getFieldValueOrDefault } from '@/lib/helpers/fieldValueHelpers';
 import type { FieldValue, FichaState, FichaCustomization } from '@/types/ficha';
 
 // Helper para crear FieldValue desde string
@@ -213,6 +214,11 @@ export default function EditorPage() {
   });
   
   // Datos de identificación
+  // FIX: Problema #1 - TextEditor recibía FieldValue en lugar de string
+  // Línea original: codigo: createFieldValue(pozo.idPozo)
+  // Problema: pozo.idPozo es FieldValue, createFieldValue espera string
+  // Solución: Extraer valor con getFieldValueOrDefault()
+  // Fecha: 2026-01-15
   const identificacionData = useMemo(() => {
     if (!pozo) {
       return {
@@ -225,16 +231,18 @@ export default function EditorPage() {
       };
     }
     return {
-      codigo: createFieldValue(pozo.idPozo),
-      direccion: createFieldValue(pozo.direccion),
-      barrio: createFieldValue(pozo.barrio),
-      sistema: createFieldValue(pozo.sistema),
-      estado: createFieldValue(pozo.estado),
-      fecha: createFieldValue(pozo.fecha),
+      codigo: createFieldValue(getFieldValueOrDefault(pozo.idPozo)),
+      direccion: createFieldValue(getFieldValueOrDefault(pozo.direccion)),
+      barrio: createFieldValue(getFieldValueOrDefault(pozo.barrio)),
+      sistema: createFieldValue(getFieldValueOrDefault(pozo.sistema)),
+      estado: createFieldValue(getFieldValueOrDefault(pozo.estado)),
+      fecha: createFieldValue(getFieldValueOrDefault(pozo.fecha)),
     };
   }, [pozo]);
   
   // Datos de estructura
+  // FIX: Problema #1 - Mismo problema que identificacionData
+  // Extraer valores de FieldValue antes de pasar a createFieldValue
   const estructuraData = useMemo(() => {
     if (!pozo) {
       return {
@@ -251,20 +259,22 @@ export default function EditorPage() {
       };
     }
     return {
-      alturaTotal: createFieldValue(pozo.elevacion),
-      rasante: createFieldValue(pozo.profundidad),
-      tapaMaterial: createFieldValue(pozo.materialTapa),
-      tapaEstado: createFieldValue(pozo.estadoTapa),
-      conoTipo: createFieldValue(pozo.tipoCono),
-      conoMaterial: createFieldValue(pozo.materialCono),
-      cuerpoDiametro: createFieldValue(pozo.diametroCilindro),
-      canuelaMaterial: createFieldValue(pozo.materialCanuela),
-      peldanosCantidad: createFieldValue(pozo.numeroPeldanos),
-      peldanosMaterial: createFieldValue(pozo.materialPeldanos),
+      alturaTotal: createFieldValue(getFieldValueOrDefault(pozo.elevacion)),
+      rasante: createFieldValue(getFieldValueOrDefault(pozo.profundidad)),
+      tapaMaterial: createFieldValue(getFieldValueOrDefault(pozo.materialTapa)),
+      tapaEstado: createFieldValue(getFieldValueOrDefault(pozo.estadoTapa)),
+      conoTipo: createFieldValue(getFieldValueOrDefault(pozo.tipoCono)),
+      conoMaterial: createFieldValue(getFieldValueOrDefault(pozo.materialCono)),
+      cuerpoDiametro: createFieldValue(getFieldValueOrDefault(pozo.diametroCilindro)),
+      canuelaMaterial: createFieldValue(getFieldValueOrDefault(pozo.materialCanuela)),
+      peldanosCantidad: createFieldValue(getFieldValueOrDefault(pozo.numeroPeldanos)),
+      peldanosMaterial: createFieldValue(getFieldValueOrDefault(pozo.materialPeldanos)),
     };
   }, [pozo]);
   
   // Datos de tuberías
+  // FIX: Problema #1 - Mismo problema con tuberías
+  // Extraer valores de FieldValue antes de pasar a createFieldValue
   const tuberiasData = useMemo(() => {
     if (!pozo || !pozo.tuberias) {
       return { entradas: [], salidas: [] };
@@ -287,18 +297,18 @@ export default function EditorPage() {
     
     return {
       entradas: entradas.map((t: any) => ({
-        id: t.idTuberia || t.id,
-        diametro: createFieldValue(t.diametro),
-        material: createFieldValue(t.material),
-        cota: createFieldValue(t.cota),
-        direccion: createFieldValue(t.tipoTuberia),
+        id: getFieldValueOrDefault(t.idTuberia || t.id),
+        diametro: createFieldValue(getFieldValueOrDefault(t.diametro)),
+        material: createFieldValue(getFieldValueOrDefault(t.material)),
+        cota: createFieldValue(getFieldValueOrDefault(t.cota)),
+        direccion: createFieldValue(getFieldValueOrDefault(t.tipoTuberia)),
       })),
       salidas: salidas.map((t: any) => ({
-        id: t.idTuberia || t.id,
-        diametro: createFieldValue(t.diametro),
-        material: createFieldValue(t.material),
-        cota: createFieldValue(t.cota),
-        direccion: createFieldValue(t.tipoTuberia),
+        id: getFieldValueOrDefault(t.idTuberia || t.id),
+        diametro: createFieldValue(getFieldValueOrDefault(t.diametro)),
+        material: createFieldValue(getFieldValueOrDefault(t.material)),
+        cota: createFieldValue(getFieldValueOrDefault(t.cota)),
+        direccion: createFieldValue(getFieldValueOrDefault(t.tipoTuberia)),
       })),
     };
   }, [pozo]);
@@ -324,11 +334,13 @@ export default function EditorPage() {
   }, [pozo]);
   
   // Observaciones
+  // FIX: Problema #1 - Mismo problema con observaciones
+  // Extraer valor de FieldValue antes de pasar a createFieldValue
   const observacionesData = useMemo(() => {
     if (!pozo) {
       return createFieldValue('', 'default');
     }
-    return createFieldValue(pozo.observaciones);
+    return createFieldValue(getFieldValueOrDefault(pozo.observaciones));
   }, [pozo]);
   
   // Handlers para cambios de campo (sincronizados)
