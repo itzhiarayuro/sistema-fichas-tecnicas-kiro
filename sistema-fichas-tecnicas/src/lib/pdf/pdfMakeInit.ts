@@ -5,10 +5,12 @@
  * - UNA sola inicialización aunque se llame N veces simultáneamente
  * - Todas las llamadas concurrentes reutilizan la misma Promise
  * - Carga lazy (on-demand)
- * - Soporte UTF-8 con Roboto (fuente por defecto de pdfmake)
+ * - Usa Helvetica como fuente estándar (incluida en PDF)
+ * - VFS configurado globalmente para evitar errores de AFM
  */
 
-'use client';
+// Importar inicialización global para asegurar que VFS se configura temprano
+import './pdfMakeGlobalInit';
 
 // Tipo para pdfmake
 interface PdfMakeInstance {
@@ -23,6 +25,25 @@ interface PdfMakeInstance {
 
 // Promise cacheada - compartida entre todas las llamadas
 let pdfMakePromise: Promise<PdfMakeInstance> | null = null;
+
+/**
+ * Minimal AFM (Adobe Font Metrics) data for standard fonts
+ * These are required by pdfmake when using bold/italic variants
+ */
+const MINIMAL_AFM_DATA = {
+  'data/Helvetica.afm': 'StartFontMetrics 4.1\nFontName Helvetica\nFullName Helvetica\nFamilyName Helvetica\nWeight Medium\nItalicAngle 0\nIsFixedPitch false\nCharacterSet StandardRoman\nFontBBox -951 -481 1446 1122\nUnderlinePosition -100\nUnderlineThickness 50\nVersion 2.0\nNotice Copyright\nEncodingScheme FontSpecific\nEndFontMetrics',
+  'data/Helvetica-Bold.afm': 'StartFontMetrics 4.1\nFontName Helvetica-Bold\nFullName Helvetica Bold\nFamilyName Helvetica\nWeight Bold\nItalicAngle 0\nIsFixedPitch false\nCharacterSet StandardRoman\nFontBBox -951 -481 1446 1122\nUnderlinePosition -100\nUnderlineThickness 50\nVersion 2.0\nNotice Copyright\nEncodingScheme FontSpecific\nEndFontMetrics',
+  'data/Helvetica-Oblique.afm': 'StartFontMetrics 4.1\nFontName Helvetica-Oblique\nFullName Helvetica Oblique\nFamilyName Helvetica\nWeight Medium\nItalicAngle -12\nIsFixedPitch false\nCharacterSet StandardRoman\nFontBBox -951 -481 1446 1122\nUnderlinePosition -100\nUnderlineThickness 50\nVersion 2.0\nNotice Copyright\nEncodingScheme FontSpecific\nEndFontMetrics',
+  'data/Helvetica-BoldOblique.afm': 'StartFontMetrics 4.1\nFontName Helvetica-BoldOblique\nFullName Helvetica Bold Oblique\nFamilyName Helvetica\nWeight Bold\nItalicAngle -12\nIsFixedPitch false\nCharacterSet StandardRoman\nFontBBox -951 -481 1446 1122\nUnderlinePosition -100\nUnderlineThickness 50\nVersion 2.0\nNotice Copyright\nEncodingScheme FontSpecific\nEndFontMetrics',
+  'data/Times-Roman.afm': 'StartFontMetrics 4.1\nFontName Times-Roman\nFullName Times Roman\nFamilyName Times\nWeight Medium\nItalicAngle 0\nIsFixedPitch false\nCharacterSet StandardRoman\nFontBBox -168 -218 1000 898\nUnderlinePosition -75\nUnderlineThickness 50\nVersion 2.0\nNotice Copyright\nEncodingScheme FontSpecific\nEndFontMetrics',
+  'data/Times-Bold.afm': 'StartFontMetrics 4.1\nFontName Times-Bold\nFullName Times Bold\nFamilyName Times\nWeight Bold\nItalicAngle 0\nIsFixedPitch false\nCharacterSet StandardRoman\nFontBBox -168 -218 1000 898\nUnderlinePosition -75\nUnderlineThickness 50\nVersion 2.0\nNotice Copyright\nEncodingScheme FontSpecific\nEndFontMetrics',
+  'data/Times-Italic.afm': 'StartFontMetrics 4.1\nFontName Times-Italic\nFullName Times Italic\nFamilyName Times\nWeight Medium\nItalicAngle -12\nIsFixedPitch false\nCharacterSet StandardRoman\nFontBBox -168 -218 1000 898\nUnderlinePosition -75\nUnderlineThickness 50\nVersion 2.0\nNotice Copyright\nEncodingScheme FontSpecific\nEndFontMetrics',
+  'data/Times-BoldItalic.afm': 'StartFontMetrics 4.1\nFontName Times-BoldItalic\nFullName Times Bold Italic\nFamilyName Times\nWeight Bold\nItalicAngle -12\nIsFixedPitch false\nCharacterSet StandardRoman\nFontBBox -168 -218 1000 898\nUnderlinePosition -75\nUnderlineThickness 50\nVersion 2.0\nNotice Copyright\nEncodingScheme FontSpecific\nEndFontMetrics',
+  'data/Courier.afm': 'StartFontMetrics 4.1\nFontName Courier\nFullName Courier\nFamilyName Courier\nWeight Medium\nItalicAngle 0\nIsFixedPitch true\nCharacterSet StandardRoman\nFontBBox -27 -250 628 805\nUnderlinePosition -100\nUnderlineThickness 50\nVersion 2.0\nNotice Copyright\nEncodingScheme FontSpecific\nEndFontMetrics',
+  'data/Courier-Bold.afm': 'StartFontMetrics 4.1\nFontName Courier-Bold\nFullName Courier Bold\nFamilyName Courier\nWeight Bold\nItalicAngle 0\nIsFixedPitch true\nCharacterSet StandardRoman\nFontBBox -27 -250 628 805\nUnderlinePosition -100\nUnderlineThickness 50\nVersion 2.0\nNotice Copyright\nEncodingScheme FontSpecific\nEndFontMetrics',
+  'data/Courier-Oblique.afm': 'StartFontMetrics 4.1\nFontName Courier-Oblique\nFullName Courier Oblique\nFamilyName Courier\nWeight Medium\nItalicAngle -12\nIsFixedPitch true\nCharacterSet StandardRoman\nFontBBox -27 -250 628 805\nUnderlinePosition -100\nUnderlineThickness 50\nVersion 2.0\nNotice Copyright\nEncodingScheme FontSpecific\nEndFontMetrics',
+  'data/Courier-BoldOblique.afm': 'StartFontMetrics 4.1\nFontName Courier-BoldOblique\nFullName Courier Bold Oblique\nFamilyName Courier\nWeight Bold\nItalicAngle -12\nIsFixedPitch true\nCharacterSet StandardRoman\nFontBBox -27 -250 628 805\nUnderlinePosition -100\nUnderlineThickness 50\nVersion 2.0\nNotice Copyright\nEncodingScheme FontSpecific\nEndFontMetrics',
+};
 
 /**
  * Obtiene instancia de pdfmake con Promise Caching
@@ -61,48 +82,41 @@ async function initializePdfMake(): Promise<PdfMakeInstance> {
     const pdfMakeModule = await import('pdfmake/build/pdfmake');
     const pdfMake = pdfMakeModule.default || pdfMakeModule;
 
-    // Cargar fuentes por defecto de pdfmake (Roboto)
-    let vfsLoaded = false;
+    // Configurar VFS con métricas de fuentes mínimas ANTES de cualquier otra operación
+    // Esto previene errores "File not found in virtual file system"
+    // IMPORTANTE: Esto debe hacerse ANTES de que se intente crear cualquier PDF
+    pdfMake.vfs = { ...MINIMAL_AFM_DATA };
     
-    try {
-      const pdfFontsModule = await import('pdfmake/build/vfs_fonts');
-      
-      // Manejar diferentes estructuras de export
-      if (pdfFontsModule?.pdfMake?.vfs) {
-        pdfMake.vfs = pdfFontsModule.pdfMake.vfs;
-        vfsLoaded = true;
-      } else if (pdfFontsModule?.default?.pdfMake?.vfs) {
-        pdfMake.vfs = pdfFontsModule.default.pdfMake.vfs;
-        vfsLoaded = true;
-      } else if (pdfFontsModule?.default) {
-        pdfMake.vfs = pdfFontsModule.default;
-        vfsLoaded = true;
-      } else if (pdfFontsModule?.vfs) {
-        pdfMake.vfs = pdfFontsModule.vfs;
-        vfsLoaded = true;
-      } else {
-        // Buscar vfs en cualquier propiedad del módulo
-        const keys = Object.keys(pdfFontsModule);
-        for (const key of keys) {
-          const obj = (pdfFontsModule as Record<string, any>)[key];
-          if (obj && typeof obj === 'object' && 'vfs' in obj) {
-            pdfMake.vfs = obj.vfs;
-            vfsLoaded = true;
-            break;
-          }
-        }
+    // Configurar fuentes estándar de PDF (no requieren archivos TTF)
+    // Helvetica, Times, Courier son fuentes built-in de PDF
+    pdfMake.fonts = {
+      Helvetica: {
+        normal: 'Helvetica',
+        bold: 'Helvetica-Bold',
+        italics: 'Helvetica-Oblique',
+        bolditalics: 'Helvetica-BoldOblique'
+      },
+      Times: {
+        normal: 'Times-Roman',
+        bold: 'Times-Bold',
+        italics: 'Times-Italic',
+        bolditalics: 'Times-BoldItalic'
+      },
+      Courier: {
+        normal: 'Courier',
+        bold: 'Courier-Bold',
+        italics: 'Courier-Oblique',
+        bolditalics: 'Courier-BoldOblique'
       }
-      
-      if (vfsLoaded) {
-        console.log('[pdfMake] ✅ VFS Roboto cargado correctamente');
-      }
-    } catch (fallbackError) {
-      console.error('[pdfMake] ❌ No se pudieron cargar fuentes:', fallbackError);
+    };
+    
+    // Configurar también globalmente en window para asegurar que está disponible
+    if (typeof window !== 'undefined') {
+      (window as any).pdfMake = pdfMake;
     }
-
-    if (!vfsLoaded) {
-      throw new Error('No se pudo cargar el VFS de fuentes para pdfmake');
-    }
+    
+    console.log('[pdfMake] ✅ Inicializado con fuentes estándar de PDF (Helvetica)');
+    console.log('[pdfMake] ✅ VFS configurado con métricas de fuentes');
 
     return pdfMake as PdfMakeInstance;
   } catch (error) {

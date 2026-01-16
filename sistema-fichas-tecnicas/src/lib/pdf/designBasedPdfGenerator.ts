@@ -1,332 +1,197 @@
 /**
- * Generador de PDF basado en Diseño
- * Requirements: 7.1, 7.2, 6.1-6.4
- * 
- * Leer diseño guardado
- * Leer datos del pozo
- * Renderizar HTML según diseño
- * Convertir a PDF respetando posiciones y estilos
- * Manejar campos repetibles (N tuberías, N sumideros, N fotos)
+ * Design-Based PDF Generator - Genera PDFs basado en diseños del diseñador
+ * Si no hay diseño, usa un formato genérico que incluye fotos
  */
 
-import type { FichaDesign, Pozo, DesignPDFExportConfig } from '@/types';
+import type { Pozo, FotoInfo } from '@/types/pozo';
+import { calcularFormatoDinamico } from './dynamicFormatCalculator';
+import { debugLogger } from './debugLogger';
 
 /**
- * Generar PDF desde un diseño
+ * Genera sección de fotos para el PDF
+ * OPTIMIZACIÓN: Comprimir fotos antes de incluirlas
  */
-export async function generatePDFFromDesign(
-  config: DesignPDFExportConfig
-): Promise<Blob> {
-  const { design, pozoData, dpi = 300, includeBleed = false, compressImages = true } = config;
-  
-  // Crear HTML renderizado
-  const html = renderDesignToHTML(design, pozoData);
-  
-  // Convertir a PDF (requiere librería como jsPDF o html2pdf)
-  // Por ahora, retornamos un placeholder
-  return new Blob([html], { type: 'text/html' });
-}
+function buildPhotosSection(fotos: FotoInfo[], maxFotosPorPagina: number = 2): unknown[] {
+  if (!fotos || fotos.length === 0) {
+    return [];
+  }
 
-/**
- * Renderizar diseño a HTML
- */
-export function renderDesignToHTML(design: FichaDesign, pozoData: Record<string, any>): string {
-  const { pageConfig, theme, fieldPlacements } = design;
-  
-  // Calcular dimensiones en mm
-  const pageWidthMm = pageConfig.width;
-  const pageHeightMm = pageConfig.height;
-  
-  // Crear HTML
-  let html = `<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${design.name}</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+  const content: unknown[] = [
+    { text: 'FOTOGRAFÍAS', style: 'sectionTitle', margin: [0, 0, 0, 8] },
+  ];
+
+  // Agrupar fotos por página (máximo 2 por página para mejor visualización)
+  for (let i = 0; i < fotos.length; i += maxFotosPorPagina) {
+    const batch = fotos.slice(i, i + maxFotosPorPagina);
     
-    body {
-      font-family: ${theme.fontFamily}, Arial, sans-serif;
-      background-color: #f5f5f5;
-      padding: 20px;
-    }
-    
-    .page {
-      width: ${pageWidthMm}mm;
-      height: ${pageHeightMm}mm;
-      background-color: ${theme.backgroundColor};
-      color: ${theme.textColor};
-      position: relative;
-      margin: 0 auto 20px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      overflow: hidden;
-      page-break-after: always;
-    }
-    
-    @media print {
-      body {
-        padding: 0;
-        background-color: white;
+    const fotoRow: unknown[] = [];
+    batch.forEach((foto) => {
+      if (foto.dataUrl) {
+        // Usar tamaño más pequeño para reducir procesamiento
+        // Ancho: 250px (A4 es ~595px, con márgenes ~570px, 2 fotos = 250px cada una)
+        fotoRow.push({
+          image: foto.dataUrl,
+          width: 250,
+          height: 187,
+          margin: [5, 5, 5, 5],
+        });
       }
-      .page {
-        margin: 0;
-        box-shadow: none;
-        page-break-after: always;
-      }
-    }
-    
-    .page-content {
-      width: 100%;
-      height: 100%;
-      position: relative;
-      padding: ${pageConfig.margins.top}mm ${pageConfig.margins.right}mm ${pageConfig.margins.bottom}mm ${pageConfig.margins.left}mm;
-    }
-    
-    .field {
-      position: absolute;
-      font-size: ${theme.baseFontSize}pt;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    
-    .field-label {
-      font-weight: bold;
-      font-size: ${theme.baseFontSize - 1}pt;
-      color: ${theme.primaryColor};
-      margin-bottom: 2px;
-    }
-    
-    .field-value {
-      font-size: ${theme.baseFontSize}pt;
-      color: ${theme.textColor};
-    }
-    
-    .field-image {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-    }
-    
-    .repeatable-group {
-      margin-bottom: 10px;
-      padding: 5px;
-      border: 1px solid ${theme.borderColor};
-      border-radius: 3px;
-    }
-    
-    .repeatable-item {
-      margin-bottom: 5px;
-      padding: 3px;
-    }
-  </style>
-</head>
-<body>
-  <div class="page">
-    <div class="page-content">
-`;
-  
-  // Agregar campos colocados
-  fieldPlacements.forEach((placement) => {
-    if (!placement.visible) return;
-    
-    const value = getFieldValue(pozoData, placement.fieldId);
-    
-    // Convertir posición de píxeles a mm
-    const xMm = (placement.position.x / 96) * 25.4; // 96 DPI a mm
-    const yMm = (placement.position.y / 96) * 25.4;
-    const widthMm = (placement.position.width / 96) * 25.4;
-    const heightMm = (placement.position.height / 96) * 25.4;
-    
-    const fieldStyle = `
-      position: absolute;
-      left: ${xMm}mm;
-      top: ${yMm}mm;
-      width: ${widthMm}mm;
-      height: ${heightMm}mm;
-      font-size: ${placement.style.fontSize}pt;
-      font-family: ${placement.style.fontFamily};
-      color: ${placement.style.color};
-      background-color: ${placement.style.backgroundColor};
-      border-radius: ${placement.style.borderRadius}px;
-      padding: ${placement.style.padding}px;
-      z-index: ${placement.zIndex};
-    `;
-    
-    if (placement.isRepeatable && Array.isArray(value)) {
-      // Manejar campos repetibles
-      html += `<div class="field repeatable-group" style="${fieldStyle}">`;
-      value.forEach((item, index) => {
-        if (placement.repeatableConfig?.showNumbering) {
-          html += `<div class="repeatable-item"><strong>${index + 1}.</strong> ${escapeHTML(String(item))}</div>`;
-        } else {
-          html += `<div class="repeatable-item">${escapeHTML(String(item))}</div>`;
-        }
+    });
+
+    if (fotoRow.length > 0) {
+      content.push({
+        table: {
+          widths: batch.map(() => '*'),
+          body: [fotoRow],
+        },
+        layout: 'noBorders',
+        margin: [0, 0, 0, 8],
       });
-      html += `</div>`;
-    } else if (placement.fieldType === 'image' && value) {
-      // Manejar imágenes
-      html += `<div class="field" style="${fieldStyle}">
-        <img src="${value}" alt="${placement.fieldName}" class="field-image">
-      </div>`;
-    } else {
-      // Manejar campos de texto
-      html += `<div class="field" style="${fieldStyle}">
-        <div class="field-label">${escapeHTML(placement.customLabel || placement.fieldName)}</div>
-        <div class="field-value">${escapeHTML(String(value || ''))}</div>
-      </div>`;
-    }
-  });
-  
-  html += `
-    </div>
-  </div>
-</body>
-</html>`;
-  
-  return html;
-}
-
-/**
- * Obtener valor de campo del objeto de datos
- */
-function getFieldValue(data: Record<string, any>, fieldId: string): any {
-  // Buscar en estructura anidada
-  const keys = fieldId.split('.');
-  let value = data;
-  
-  for (const key of keys) {
-    if (value && typeof value === 'object') {
-      value = value[key];
-    } else {
-      return undefined;
-    }
-  }
-  
-  return value;
-}
-
-/**
- * Escapar HTML
- */
-function escapeHTML(text: string): string {
-  const map: Record<string, string> = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;',
-  };
-  return text.replace(/[&<>"']/g, (char) => map[char]);
-}
-
-/**
- * Comprimir imagen
- */
-export async function compressImage(
-  imageData: string,
-  quality: number = 0.8
-): Promise<string> {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
       
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(img, 0, 0);
-        resolve(canvas.toDataURL('image/jpeg', quality));
-      } else {
-        resolve(imageData);
+      // Agregar salto de página después de cada grupo de fotos
+      if (i + maxFotosPorPagina < fotos.length) {
+        content.push({ text: '', pageBreak: 'after' });
       }
-    };
-    img.src = imageData;
-  });
-}
-
-/**
- * Generar múltiples PDFs (lote)
- */
-export async function generatePDFBatch(
-  designs: FichaDesign[],
-  pozos: Pozo[],
-  onProgress?: (current: number, total: number) => void
-): Promise<Blob[]> {
-  const pdfs: Blob[] = [];
-  
-  for (let i = 0; i < pozos.length; i++) {
-    const pozo = pozos[i];
-    const design = designs[0]; // Usar primer diseño para todos
-    
-    const config: DesignPDFExportConfig = {
-      design,
-      pozoData: pozoToObject(pozo),
-      dpi: 300,
-      includeBleed: false,
-      compressImages: true,
-    };
-    
-    const pdf = await generatePDFFromDesign(config);
-    pdfs.push(pdf);
-    
-    onProgress?.(i + 1, pozos.length);
+    }
   }
-  
-  return pdfs;
+
+  return content;
 }
 
 /**
- * Convertir Pozo a objeto plano
+ * Obtiene todas las fotos de un pozo
  */
-function pozoToObject(pozo: Pozo): Record<string, any> {
+function getAllPhotos(pozo: Pozo): FotoInfo[] {
+  const fotos: FotoInfo[] = [];
+
+  if (pozo.fotos?.principal) fotos.push(...pozo.fotos.principal);
+  if (pozo.fotos?.entradas) fotos.push(...pozo.fotos.entradas);
+  if (pozo.fotos?.salidas) fotos.push(...pozo.fotos.salidas);
+  if (pozo.fotos?.sumideros) fotos.push(...pozo.fotos.sumideros);
+  if (pozo.fotos?.otras) fotos.push(...pozo.fotos.otras);
+
+  return fotos;
+}
+
+/**
+ * Genera PDF basado en formato genérico
+ */
+export function generatePdfContent(
+  pozo: Pozo,
+  includePhotos: boolean = true
+): unknown[] {
+  const content: unknown[] = [];
+
+  debugLogger.info('DesignBasedPdfGenerator', 'Generating PDF content', {
+    pozoId: pozo.idPozo,
+    includePhotos,
+  });
+
+  // Usar formato genérico
+  content.push({
+    table: {
+      widths: ['*'],
+      body: [
+        [{ text: 'FICHA TÉCNICA DE POZO DE INSPECCIÓN', style: 'header', fillColor: '#1F4E79', margin: [0, 8, 0, 8] }],
+        [{ text: `Pozo: ${pozo.idPozo}`, fontSize: 12, bold: true, alignment: 'center', margin: [0, 4, 0, 4] }],
+      ],
+    },
+    layout: 'noBorders',
+  });
+
+  content.push({ text: '', margin: [0, 8] });
+
+  // Secciones de datos
+  content.push({
+    stack: [
+      { text: 'IDENTIFICACIÓN', style: 'sectionTitle', margin: [0, 0, 0, 8] },
+      {
+        table: {
+          widths: ['40%', '60%'],
+          body: [
+            [{ text: 'ID Pozo', style: 'label' }, { text: pozo.idPozo || '-', style: 'value' }],
+            [{ text: 'Coordenada X', style: 'label' }, { text: pozo.coordenadaX || '-', style: 'value' }],
+            [{ text: 'Coordenada Y', style: 'label' }, { text: pozo.coordenadaY || '-', style: 'value' }],
+            [{ text: 'Fecha', style: 'label' }, { text: pozo.fecha || '-', style: 'value' }],
+          ],
+        },
+        layout: 'noBorders',
+      },
+    ],
+  });
+
+  content.push({ text: '', margin: [0, 8] });
+
+  // Fotos
+  if (includePhotos) {
+    const fotos = getAllPhotos(pozo);
+    if (fotos.length > 0) {
+      debugLogger.info('DesignBasedPdfGenerator', 'Adding photos section', {
+        photoCount: fotos.length,
+      });
+      content.push(...buildPhotosSection(fotos));
+      content.push({ text: '', margin: [0, 8] });
+    }
+  }
+
+  return content;
+}
+
+/**
+ * Recomienda el mejor formato para un pozo
+ */
+export function recommendFormatForPozo(pozo: Pozo): string {
+  const resultado = calcularFormatoDinamico(pozo);
+  
+  debugLogger.info('DesignBasedPdfGenerator', 'Format recommendation', {
+    pozoId: pozo.idPozo,
+    formatoRecomendado: resultado.formatoUsado.nombre,
+    fotosValidas: resultado.fotosValidas.length,
+    paginas: resultado.paginas,
+  });
+
+  return resultado.formatoUsado.id;
+}
+
+/**
+ * Valida si el pozo puede generar PDF con fotos
+ */
+export function validatePozoForPhotoGeneration(pozo: Pozo): {
+  canGenerate: boolean;
+  warnings: string[];
+  recommendations: string[];
+} {
+  const fotos = getAllPhotos(pozo);
+  const warnings: string[] = [];
+  const recommendations: string[] = [];
+
+  if (fotos.length === 0) {
+    warnings.push('No hay fotos para incluir en el PDF');
+    recommendations.push('Cargue fotos antes de generar el PDF');
+  }
+
+  if (fotos.length > 50) {
+    warnings.push(`Muchas fotos (${fotos.length}). El PDF puede ser muy grande.`);
+    recommendations.push('Considere generar múltiples PDFs o reducir la cantidad de fotos');
+  }
+
+  // Calcular tamaño total
+  let totalSizeMB = 0;
+  fotos.forEach(foto => {
+    if (foto.dataUrl) {
+      const base64Part = foto.dataUrl.split(',')[1] || '';
+      totalSizeMB += (base64Part.length * 3) / 4 / 1024 / 1024;
+    }
+  });
+
+  if (totalSizeMB > 100) {
+    warnings.push(`Tamaño total de fotos muy grande (${totalSizeMB.toFixed(2)}MB)`);
+    recommendations.push('Reduzca la calidad de las imágenes');
+  }
+
   return {
-    id: pozo.id,
-    identificacion: {
-      idPozo: pozo.identificacion?.idPozo?.value || pozo.idPozo?.value || '',
-      coordenadaX: pozo.identificacion?.coordenadaX?.value || '',
-      coordenadaY: pozo.identificacion?.coordenadaY?.value || '',
-      fecha: pozo.identificacion?.fecha?.value || '',
-      levanto: pozo.identificacion?.levanto?.value || '',
-      estado: pozo.identificacion?.estado?.value || '',
-    },
-    ubicacion: {
-      direccion: pozo.ubicacion?.direccion?.value || '',
-      barrio: pozo.ubicacion?.barrio?.value || '',
-      elevacion: pozo.ubicacion?.elevacion?.value || '',
-      profundidad: pozo.ubicacion?.profundidad?.value || '',
-    },
-    componentes: {
-      existeTapa: pozo.componentes?.existeTapa?.value || '',
-      estadoTapa: pozo.componentes?.estadoTapa?.value || '',
-      existeCilindro: pozo.componentes?.existeCilindro?.value || '',
-      diametroCilindro: pozo.componentes?.diametroCilindro?.value || '',
-      sistema: pozo.componentes?.sistema?.value || '',
-      anoInstalacion: pozo.componentes?.anoInstalacion?.value || '',
-    },
-    tuberias: (pozo.tuberias?.tuberias || []).map((t) => ({
-      idTuberia: t.idTuberia?.value || '',
-      tipoTuberia: t.tipoTuberia?.value || '',
-      diametro: t.diametro?.value || '',
-      material: t.material?.value || '',
-      estado: t.estado?.value || '',
-    })),
-    sumideros: (pozo.sumideros?.sumideros || []).map((s) => ({
-      idSumidero: s.idSumidero?.value || '',
-      tipoSumidero: s.tipoSumidero?.value || '',
-      diametro: s.diametro?.value || '',
-    })),
-    fotos: (pozo.fotos?.fotos || []).map((f) => ({
-      idFoto: f.idFoto?.value || '',
-      tipoFoto: f.tipoFoto?.value || '',
-      rutaArchivo: f.rutaArchivo?.value || '',
-      dataUrl: f.dataUrl,
-    })),
+    canGenerate: warnings.length === 0,
+    warnings,
+    recommendations,
   };
 }

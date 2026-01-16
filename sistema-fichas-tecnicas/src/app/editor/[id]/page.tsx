@@ -222,21 +222,29 @@ export default function EditorPage() {
   const identificacionData = useMemo(() => {
     if (!pozo) {
       return {
-        codigo: createFieldValue('', 'default'),
+        idPozo: createFieldValue('', 'default'),
+        coordenadaX: createFieldValue('', 'default'),
+        coordenadaY: createFieldValue('', 'default'),
+        fecha: createFieldValue('', 'default'),
+        levanto: createFieldValue('', 'default'),
+        estado: createFieldValue('', 'default'),
         direccion: createFieldValue('', 'default'),
         barrio: createFieldValue('', 'default'),
-        sistema: createFieldValue('', 'default'),
-        estado: createFieldValue('', 'default'),
-        fecha: createFieldValue('', 'default'),
+        elevacion: createFieldValue('', 'default'),
+        profundidad: createFieldValue('', 'default'),
       };
     }
     return {
-      codigo: createFieldValue(getFieldValueOrDefault(pozo.idPozo)),
+      idPozo: createFieldValue(getFieldValueOrDefault(pozo.idPozo)),
+      coordenadaX: createFieldValue(getFieldValueOrDefault(pozo.coordenadaX)),
+      coordenadaY: createFieldValue(getFieldValueOrDefault(pozo.coordenadaY)),
+      fecha: createFieldValue(getFieldValueOrDefault(pozo.fecha)),
+      levanto: createFieldValue(getFieldValueOrDefault(pozo.levanto)),
+      estado: createFieldValue(getFieldValueOrDefault(pozo.estado)),
       direccion: createFieldValue(getFieldValueOrDefault(pozo.direccion)),
       barrio: createFieldValue(getFieldValueOrDefault(pozo.barrio)),
-      sistema: createFieldValue(getFieldValueOrDefault(pozo.sistema)),
-      estado: createFieldValue(getFieldValueOrDefault(pozo.estado)),
-      fecha: createFieldValue(getFieldValueOrDefault(pozo.fecha)),
+      elevacion: createFieldValue(getFieldValueOrDefault(pozo.elevacion)),
+      profundidad: createFieldValue(getFieldValueOrDefault(pozo.profundidad)),
     };
   }, [pozo]);
   
@@ -246,29 +254,53 @@ export default function EditorPage() {
   const estructuraData = useMemo(() => {
     if (!pozo) {
       return {
-        alturaTotal: createFieldValue('', 'default'),
-        rasante: createFieldValue('', 'default'),
-        tapaMaterial: createFieldValue('', 'default'),
-        tapaEstado: createFieldValue('', 'default'),
-        conoTipo: createFieldValue('', 'default'),
-        conoMaterial: createFieldValue('', 'default'),
-        cuerpoDiametro: createFieldValue('', 'default'),
-        canuelaMaterial: createFieldValue('', 'default'),
-        peldanosCantidad: createFieldValue('', 'default'),
-        peldanosMaterial: createFieldValue('', 'default'),
+        sistema: createFieldValue('', 'default'),
+        anoInstalacion: createFieldValue('', 'default'),
+        tipoCamara: createFieldValue('', 'default'),
+        estructuraPavimento: createFieldValue('', 'default'),
+        existeTapa: createFieldValue('', 'default'),
+        estadoTapa: createFieldValue('', 'default'),
+        materialTapa: createFieldValue('', 'default'),
+        existeCono: createFieldValue('', 'default'),
+        tipoCono: createFieldValue('', 'default'),
+        materialCono: createFieldValue('', 'default'),
+        estadoCono: createFieldValue('', 'default'),
+        existeCilindro: createFieldValue('', 'default'),
+        diametroCilindro: createFieldValue('', 'default'),
+        materialCilindro: createFieldValue('', 'default'),
+        estadoCilindro: createFieldValue('', 'default'),
+        existeCanuela: createFieldValue('', 'default'),
+        materialCanuela: createFieldValue('', 'default'),
+        estadoCanuela: createFieldValue('', 'default'),
+        existePeldanos: createFieldValue('', 'default'),
+        numeroPeldanos: createFieldValue('', 'default'),
+        materialPeldanos: createFieldValue('', 'default'),
+        estadoPeldanos: createFieldValue('', 'default'),
       };
     }
     return {
-      alturaTotal: createFieldValue(getFieldValueOrDefault(pozo.elevacion)),
-      rasante: createFieldValue(getFieldValueOrDefault(pozo.profundidad)),
-      tapaMaterial: createFieldValue(getFieldValueOrDefault(pozo.materialTapa)),
-      tapaEstado: createFieldValue(getFieldValueOrDefault(pozo.estadoTapa)),
-      conoTipo: createFieldValue(getFieldValueOrDefault(pozo.tipoCono)),
-      conoMaterial: createFieldValue(getFieldValueOrDefault(pozo.materialCono)),
-      cuerpoDiametro: createFieldValue(getFieldValueOrDefault(pozo.diametroCilindro)),
-      canuelaMaterial: createFieldValue(getFieldValueOrDefault(pozo.materialCanuela)),
-      peldanosCantidad: createFieldValue(getFieldValueOrDefault(pozo.numeroPeldanos)),
-      peldanosMaterial: createFieldValue(getFieldValueOrDefault(pozo.materialPeldanos)),
+      sistema: createFieldValue(getFieldValueOrDefault(pozo.sistema)),
+      anoInstalacion: createFieldValue(getFieldValueOrDefault(pozo.anoInstalacion)),
+      tipoCamara: createFieldValue(getFieldValueOrDefault(pozo.tipoCamara)),
+      estructuraPavimento: createFieldValue(getFieldValueOrDefault(pozo.estructuraPavimento)),
+      existeTapa: createFieldValue(getFieldValueOrDefault(pozo.existeTapa)),
+      estadoTapa: createFieldValue(getFieldValueOrDefault(pozo.estadoTapa)),
+      materialTapa: createFieldValue(getFieldValueOrDefault(pozo.materialTapa)),
+      existeCono: createFieldValue(getFieldValueOrDefault(pozo.existeCono)),
+      tipoCono: createFieldValue(getFieldValueOrDefault(pozo.tipoCono)),
+      materialCono: createFieldValue(getFieldValueOrDefault(pozo.materialCono)),
+      estadoCono: createFieldValue(getFieldValueOrDefault(pozo.estadoCono)),
+      existeCilindro: createFieldValue(getFieldValueOrDefault(pozo.existeCilindro)),
+      diametroCilindro: createFieldValue(getFieldValueOrDefault(pozo.diametroCilindro)),
+      materialCilindro: createFieldValue(getFieldValueOrDefault(pozo.materialCilindro)),
+      estadoCilindro: createFieldValue(getFieldValueOrDefault(pozo.estadoCilindro)),
+      existeCanuela: createFieldValue(getFieldValueOrDefault(pozo.existeCanuela)),
+      materialCanuela: createFieldValue(getFieldValueOrDefault(pozo.materialCanuela)),
+      estadoCanuela: createFieldValue(getFieldValueOrDefault(pozo.estadoCanuela)),
+      existePeldanos: createFieldValue(getFieldValueOrDefault(pozo.existePeldanos)),
+      numeroPeldanos: createFieldValue(getFieldValueOrDefault(pozo.numeroPeldanos)),
+      materialPeldanos: createFieldValue(getFieldValueOrDefault(pozo.materialPeldanos)),
+      estadoPeldanos: createFieldValue(getFieldValueOrDefault(pozo.estadoPeldanos)),
     };
   }, [pozo]);
   
@@ -534,73 +566,10 @@ export default function EditorPage() {
     <ToolBar
       fichaStore={fichaStore}
       pozo={pozo}
+      fichaState={fichaStore.getState()}
       onBack={handleBack}
       onCustomizeClick={() => setShowCustomization(!showCustomization)}
       onResetFormat={handleResetFormat}
-      onGeneratePDF={async () => {
-        // Validar que haya fotos
-        const fotosCount = (
-          (fotosData.principal?.length || 0) +
-          (fotosData.entradas?.length || 0) +
-          (fotosData.salidas?.length || 0) +
-          (fotosData.sumideros?.length || 0) +
-          (fotosData.otras?.length || 0)
-        );
-
-        if (fotosCount === 0) {
-          addToast({
-            type: 'error',
-            message: 'No se puede generar PDF: la ficha no tiene fotos asociadas. Por favor, carga al menos una foto antes de generar el PDF.',
-            duration: 5000,
-          });
-          return;
-        }
-
-        try {
-          // Llamar a la API para generar PDF
-          const response = await fetch('/api/pdf', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              ficha: syncedState,
-              pozo,
-            }),
-          });
-
-          if (!response.ok) {
-            const error = await response.json();
-            addToast({
-              type: 'error',
-              message: error.error || 'Error al generar PDF',
-              duration: 5000,
-            });
-            return;
-          }
-
-          // Descargar PDF
-          const blob = await response.blob();
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `ficha-${pozo.idPozo?.value || 'tecnica'}.pdf`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-
-          addToast({
-            type: 'success',
-            message: 'PDF generado y descargado exitosamente',
-          });
-        } catch (error) {
-          console.error('Error generando PDF:', error);
-          addToast({
-            type: 'error',
-            message: 'Error al generar PDF. Por favor, intenta de nuevo.',
-            duration: 5000,
-          });
-        }
-      }}
       showCustomization={showCustomization}
       isPending={isPending}
       version={version}

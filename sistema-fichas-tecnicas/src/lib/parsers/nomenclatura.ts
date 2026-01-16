@@ -3,20 +3,23 @@
  * Requirements: 10.1-10.4
  * 
  * Patrones soportados:
- * - Principales: P (Panorámica), I (Interna), T (Tubería)
- * - Entradas: E1-T (Tubería entrada 1), E2-T, E3-T, etc.
- * - Salidas: S-T (Tubería salida), S1-T, S2-T, etc.
- * - Sumideros: SUM1, SUM2, etc.
+ * - Principales: T (Tapa), I (Interior), P (Panorámica)
+ * - Entradas: E1-T (Entrada 1), E2-T (Entrada 2), etc.
+ * - Salidas: S-T (Salida)
+ * - Sumideros: SUM (Sumidero)
  * 
  * Reglas de nomenclatura:
- * - Si termina en T = Tubería
- * - I = Interna
+ * - T = Tapa (solo T, sin -S-)
+ * - I = Interior
  * - P = Panorámica
- * - Si contiene E y T = Tubería (entrada)
- * - Si contiene S y T = Tubería (salida)
+ * - E{n}-T = Entrada {n} (donde n es el número)
+ * - S-T = Salida
+ * - SUM = Sumidero
+ * 
+ * IMPORTANTE: Cualquier foto con "Z" en el nombre se IGNORA (no se procesa)
  * 
  * Formato general: {POZO_ID}-{TIPO}[-{SUBTIPO}]
- * Ejemplo: M680-P.jpg, M680-I.jpg, M680-T.jpg, M680-E1-T.jpg, M680-S-T.jpg, M680-SUM1.jpg
+ * Ejemplo: M680-T.jpg, M680-I.jpg, M680-P.jpg, M680-E1-T.jpg, M680-S-T.jpg, M680-SUM.jpg
  */
 
 export interface NomenclaturaResult {
@@ -24,7 +27,7 @@ export interface NomenclaturaResult {
   pozoId: string;
   /** Categoría de la foto */
   categoria: 'PRINCIPAL' | 'ENTRADA' | 'SALIDA' | 'SUMIDERO' | 'OTRO';
-  /** Subcategoría específica (ej: E1-T, S-Z, SUM1) */
+  /** Subcategoría específica (ej: E1-T, S-T, SUM1) */
   subcategoria: string;
   /** Descripción legible del tipo de foto */
   tipo: string;
@@ -32,29 +35,40 @@ export interface NomenclaturaResult {
   isValid: boolean;
   /** Mensaje de error si no es válida */
   error?: string;
+  /** Si la foto contiene "Z" y debe ser ignorada */
+  debeIgnorarse: boolean;
 }
 
 /**
  * Patrones de nomenclatura soportados
- * Cada patrón captura: [1] pozoId, [2] tipo, [3] subtipo (opcional)
+ * IMPORTANTE: Cualquier patrón con "Z" se marca como ignorado
  */
 const PATTERNS = {
-  // Fotos principales: M680-P (Panorámica), M680-I (Interna), M680-T (Tubería)
-  PRINCIPAL: /^([A-Z]\d+)-([PIT])$/i,
-  // Entradas con número: M680-E1-T, M680-E2-T, etc. (solo T, sin Z)
+  // Fotos principales: M680-T (Tapa), M680-I (Interior), M680-P (Panorámica)
+  // Solo T, I, P - sin -S- para T
+  PRINCIPAL: /^([A-Z]\d+)-([TIP])$/i,
+  
+  // Entradas con número: M680-E1-T, M680-E2-T, etc.
   ENTRADA: /^([A-Z]\d+)-(E\d+)-T$/i,
-  // Salidas con número opcional: M680-S-T, M680-S1-T, M680-S2-T, etc. (solo T, sin Z)
-  SALIDA_CON_NUMERO: /^([A-Z]\d+)-(S\d+)-T$/i,
-  SALIDA_SIN_NUMERO: /^([A-Z]\d+)-(S)-T$/i,
-  // Sumideros: M680-SUM1, M680-SUM2
-  SUMIDERO: /^([A-Z]\d+)-(SUM\d+)$/i,
+  // Entradas con Z (ignoradas): M680-E1-Z, M680-E2-Z, etc.
+  ENTRADA_Z: /^([A-Z]\d+)-(E\d+)-Z$/i,
+  
+  // Salida sin número: M680-S-T
+  SALIDA: /^([A-Z]\d+)-S-T$/i,
+  // Salida con Z (ignorada): M680-S-Z
+  SALIDA_Z: /^([A-Z]\d+)-S-Z$/i,
+  
+  // Sumidero: M680-SUM
+  SUMIDERO: /^([A-Z]\d+)-SUM$/i,
+  // Sumidero con Z (ignorado): M680-SUM-Z
+  SUMIDERO_Z: /^([A-Z]\d+)-SUM-Z$/i,
 };
 
 /** Descripciones legibles para tipos de fotos principales */
 const TIPO_DESCRIPCION: Record<string, string> = {
+  T: 'Tapa',
+  I: 'Interior',
   P: 'Panorámica',
-  I: 'Interna',
-  T: 'Tubería',
 };
 
 /** Descripciones para subtipos de entradas/salidas */
@@ -75,8 +89,51 @@ export function parseNomenclatura(filename: string): NomenclaturaResult {
     return createInvalidResult(filename, 'Nombre de archivo vacío');
   }
   
-  // Intentar patrón PRINCIPAL
-  let match = nameWithoutExt.match(PATTERNS.PRINCIPAL);
+  // PRIMERO: Verificar si contiene "Z" - si es así, IGNORAR
+  // Intentar patrón ENTRADA_Z (ignoradas)
+  let match = nameWithoutExt.match(PATTERNS.ENTRADA_Z);
+  if (match) {
+    const entradaNum = match[2].toUpperCase();
+    return {
+      pozoId: match[1].toUpperCase(),
+      categoria: 'ENTRADA',
+      subcategoria: `${entradaNum}-Z`,
+      tipo: `Entrada ${entradaNum.slice(1)} (IGNORADA - contiene Z)`,
+      isValid: true,
+      debeIgnorarse: true,
+    };
+  }
+  
+  // Intentar patrón SALIDA_Z (ignoradas)
+  match = nameWithoutExt.match(PATTERNS.SALIDA_Z);
+  if (match) {
+    return {
+      pozoId: match[1].toUpperCase(),
+      categoria: 'SALIDA',
+      subcategoria: `S-Z`,
+      tipo: `Salida (IGNORADA - contiene Z)`,
+      isValid: true,
+      debeIgnorarse: true,
+    };
+  }
+  
+  // Intentar patrón SUMIDERO_Z (ignoradas)
+  match = nameWithoutExt.match(PATTERNS.SUMIDERO_Z);
+  if (match) {
+    return {
+      pozoId: match[1].toUpperCase(),
+      categoria: 'SUMIDERO',
+      subcategoria: `SUM-Z`,
+      tipo: `Sumidero (IGNORADA - contiene Z)`,
+      isValid: true,
+      debeIgnorarse: true,
+    };
+  }
+  
+  // SEGUNDO: Procesar fotos válidas (sin Z)
+  
+  // Intentar patrón PRINCIPAL (T, I, P)
+  match = nameWithoutExt.match(PATTERNS.PRINCIPAL);
   if (match) {
     const tipoCode = match[2].toUpperCase();
     return {
@@ -85,10 +142,11 @@ export function parseNomenclatura(filename: string): NomenclaturaResult {
       subcategoria: tipoCode,
       tipo: TIPO_DESCRIPCION[tipoCode] || tipoCode,
       isValid: true,
+      debeIgnorarse: false,
     };
   }
   
-  // Intentar patrón ENTRADA
+  // Intentar patrón ENTRADA (E{n}-T)
   match = nameWithoutExt.match(PATTERNS.ENTRADA);
   if (match) {
     const entradaNum = match[2].toUpperCase();
@@ -96,47 +154,35 @@ export function parseNomenclatura(filename: string): NomenclaturaResult {
       pozoId: match[1].toUpperCase(),
       categoria: 'ENTRADA',
       subcategoria: `${entradaNum}-T`,
-      tipo: `Entrada ${entradaNum.slice(1)} - Tubería`,
+      tipo: `Entrada ${entradaNum.slice(1)}`,
       isValid: true,
+      debeIgnorarse: false,
     };
   }
   
-  // Intentar patrón SALIDA con número
-  match = nameWithoutExt.match(PATTERNS.SALIDA_CON_NUMERO);
-  if (match) {
-    const salidaNum = match[2].toUpperCase();
-    return {
-      pozoId: match[1].toUpperCase(),
-      categoria: 'SALIDA',
-      subcategoria: `${salidaNum}-T`,
-      tipo: `Salida ${salidaNum.slice(1)} - Tubería`,
-      isValid: true,
-    };
-  }
-  
-  // Intentar patrón SALIDA sin número
-  match = nameWithoutExt.match(PATTERNS.SALIDA_SIN_NUMERO);
+  // Intentar patrón SALIDA (S-T)
+  match = nameWithoutExt.match(PATTERNS.SALIDA);
   if (match) {
     return {
       pozoId: match[1].toUpperCase(),
       categoria: 'SALIDA',
       subcategoria: `S-T`,
-      tipo: `Salida - Tubería`,
+      tipo: `Salida`,
       isValid: true,
+      debeIgnorarse: false,
     };
   }
   
-  // Intentar patrón SUMIDERO
+  // Intentar patrón SUMIDERO (SUM)
   match = nameWithoutExt.match(PATTERNS.SUMIDERO);
   if (match) {
-    const sumideroId = match[2].toUpperCase();
-    const numSumidero = sumideroId.replace('SUM', '');
     return {
       pozoId: match[1].toUpperCase(),
       categoria: 'SUMIDERO',
-      subcategoria: sumideroId,
-      tipo: `Sumidero ${numSumidero}`,
+      subcategoria: `SUM`,
+      tipo: `Sumidero`,
       isValid: true,
+      debeIgnorarse: false,
     };
   }
   
@@ -148,6 +194,7 @@ export function parseNomenclatura(filename: string): NomenclaturaResult {
  * Crea un resultado inválido con valores por defecto
  */
 function createInvalidResult(filename: string, error: string): NomenclaturaResult {
+  const debeIgnorarse = /Z/i.test(filename);
   return {
     pozoId: '',
     categoria: 'OTRO',
@@ -155,6 +202,7 @@ function createInvalidResult(filename: string, error: string): NomenclaturaResul
     tipo: 'Desconocido',
     isValid: false,
     error,
+    debeIgnorarse,
   };
 }
 
@@ -193,7 +241,7 @@ export function isValidNomenclatura(filename: string): boolean {
 
 /**
  * Obtiene todos los tipos de fotos principales soportados
- * @returns Array de códigos de tipos principales
+ * @returns Array de códigos de tipos principales (T, I, P)
  */
 export function getTiposPrincipales(): string[] {
   return Object.keys(TIPO_DESCRIPCION);

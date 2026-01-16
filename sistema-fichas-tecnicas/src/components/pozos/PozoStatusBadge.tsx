@@ -14,7 +14,6 @@
 
 import { Pozo } from '@/types';
 import { useGlobalStore } from '@/stores/globalStore';
-import { createPozoAccessor } from '@/lib/helpers/pozoAccessor';
 
 export type PozoStatusType = 'complete' | 'incomplete' | 'warning';
 
@@ -25,27 +24,36 @@ interface PozoStatusBadgeProps {
 }
 
 /**
+ * Extrae el valor de un FieldValue de forma segura
+ */
+function getFieldValueAsString(value: any): string {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object' && 'value' in value) return String(value.value);
+  return String(value);
+}
+
+/**
  * Determina el estado de completitud de un pozo
  * Analiza datos requeridos y fotos asociadas
  */
 export function getPozoStatus(pozo: Pozo, fotosGlobales?: Map<string, any>): PozoStatusType {
-  const accessor = createPozoAccessor(pozo);
   const issues: string[] = [];
   const warnings: string[] = [];
   
   // Check required fields
-  if (!accessor.getIdPozo()) issues.push('Código faltante');
-  if (!accessor.getDireccion()) issues.push('Dirección faltante');
+  if (!getFieldValueAsString(pozo.idPozo)) issues.push('Código faltante');
+  if (!getFieldValueAsString(pozo.direccion)) issues.push('Dirección faltante');
   
   // Check estructura fields - solo como advertencias
-  if (!accessor.getElevacion()) warnings.push('Elevación no especificada');
-  if (!accessor.getMaterialTapa()) warnings.push('Material de tapa no especificado');
-  if (!accessor.getDiametroCilindro()) warnings.push('Diámetro de cilindro no especificado');
+  if (!getFieldValueAsString(pozo.elevacion)) warnings.push('Elevación no especificada');
+  if (!getFieldValueAsString(pozo.materialTapa)) warnings.push('Material de tapa no especificado');
+  if (!getFieldValueAsString(pozo.diametroCilindro)) warnings.push('Diámetro de cilindro no especificado');
   
   // Check photos - buscar en fotos globales si se proporcionan
   let fotosCount = countFotos(pozo);
   if (fotosGlobales) {
-    fotosCount = countFotosGlobales(accessor.getIdPozo(), fotosGlobales);
+    fotosCount = countFotosGlobales(getFieldValueAsString(pozo.idPozo), fotosGlobales);
   }
   
   if (fotosCount === 0) {
@@ -67,23 +75,22 @@ export function getPozoStatus(pozo: Pozo, fotosGlobales?: Map<string, any>): Poz
  * Obtiene los detalles de los problemas encontrados
  */
 export function getPozoStatusDetails(pozo: Pozo, fotosGlobales?: Map<string, any>): { issues: string[]; warnings: string[] } {
-  const accessor = createPozoAccessor(pozo);
   const issues: string[] = [];
   const warnings: string[] = [];
   
   // Check required fields
-  if (!accessor.getIdPozo()) issues.push('Código faltante');
-  if (!accessor.getDireccion()) issues.push('Dirección faltante');
+  if (!getFieldValueAsString(pozo.idPozo)) issues.push('Código faltante');
+  if (!getFieldValueAsString(pozo.direccion)) issues.push('Dirección faltante');
   
   // Check estructura fields - solo como advertencias, no como problemas
-  if (!accessor.getElevacion()) warnings.push('Elevación no especificada');
-  if (!accessor.getMaterialTapa()) warnings.push('Material de tapa no especificado');
-  if (!accessor.getDiametroCilindro()) warnings.push('Diámetro de cilindro no especificado');
+  if (!getFieldValueAsString(pozo.elevacion)) warnings.push('Elevación no especificada');
+  if (!getFieldValueAsString(pozo.materialTapa)) warnings.push('Material de tapa no especificado');
+  if (!getFieldValueAsString(pozo.diametroCilindro)) warnings.push('Diámetro de cilindro no especificado');
   
   // Check photos - buscar en fotos globales si se proporcionan
   let fotosCount = countFotos(pozo);
   if (fotosGlobales) {
-    fotosCount = countFotosGlobales(accessor.getIdPozo(), fotosGlobales);
+    fotosCount = countFotosGlobales(getFieldValueAsString(pozo.idPozo), fotosGlobales);
   }
   
   if (fotosCount === 0) {

@@ -337,6 +337,13 @@ const FIELD_DICTIONARY: FieldDictionary = {
       type: 'image',
       required: false,
     },
+    {
+      id: 'fotoPanoramica',
+      name: 'Foto Panorámica',
+      description: 'Fotografía panorámica (P)',
+      type: 'image',
+      required: false,
+    },
   ],
 };
 

@@ -1,14 +1,5 @@
-/**
- * API Route para exportación en lote (ZIP)
- * Requirements: 7.6
- * 
- * POST /api/export
- * Body: { items: BatchItem[], options?: PDFGeneratorOptions }
- * Response: ZIP blob o error
- */
-
 import { NextRequest, NextResponse } from 'next/server';
-import { BatchGenerator, type BatchItem, type PDFGeneratorOptions } from '@/lib/pdf';
+import { BatchGeneratorPdfMake, type BatchItem, type PDFGeneratorOptions } from '@/lib/pdf';
 
 interface ExportRequestBody {
   items: BatchItem[];
@@ -19,7 +10,6 @@ export async function POST(request: NextRequest) {
   try {
     const body: ExportRequestBody = await request.json();
     
-    // Validar datos requeridos
     if (!body.items || !Array.isArray(body.items) || body.items.length === 0) {
       return NextResponse.json(
         { 
@@ -32,7 +22,6 @@ export async function POST(request: NextRequest) {
 
     const { items, options = {} } = body;
 
-    // Validar estructura de items
     for (const item of items) {
       if (!item.ficha || !item.pozo) {
         return NextResponse.json(
@@ -45,8 +34,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Generar lote de PDFs
-    const generator = new BatchGenerator();
+    const generator = new BatchGeneratorPdfMake();
     const result = await generator.generateBatch(items, options);
 
     if (!result.success || !result.zipBlob) {
@@ -68,7 +56,6 @@ export async function POST(request: NextRequest) {
     // Convertir blob a ArrayBuffer para la respuesta
     const arrayBuffer = await result.zipBlob.arrayBuffer();
 
-    // Retornar ZIP como archivo descargable
     return new NextResponse(arrayBuffer, {
       status: 200,
       headers: {

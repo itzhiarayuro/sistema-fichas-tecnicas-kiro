@@ -1,8 +1,9 @@
 /**
- * Fonts module - Exporta configuración de fuentes y VFS
+ * Fonts module - Exporta configuración de fuentes
+ * 
+ * Nota: Se usan fuentes estándar de PDF (Helvetica) que no requieren VFS
  */
 
-export { vfs, default as vfsDefault } from './vfs_fonts';
 export { 
   fonts, 
   pdfStyles, 

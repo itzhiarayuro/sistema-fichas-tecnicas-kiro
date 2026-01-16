@@ -68,6 +68,7 @@ export enum TipoFoto {
   SALIDA = 'salida',
   SUMIDERO = 'sumidero',
   MEDICION = 'medicion',
+  PANORAMICA = 'panoramica',
   OTRO = 'otro',
 }
 
@@ -300,7 +301,7 @@ export interface FotoInfo {
   idPozo: FieldValue; // Pozo fotografiado
   
   // 🔴 Obligatorio
-  tipoFoto: FieldValue; // Tipo de fotografía (tapa/interior/general/entrada/salida/sumidero/medicion/otro)
+  tipoFoto: TipoFoto; // Tipo de fotografía (tapa/interior/general/entrada/salida/sumidero/medicion/panoramica/otro)
   
   // 🔴 Obligatorio
   rutaArchivo: FieldValue; // Ruta del archivo
@@ -390,11 +391,11 @@ export interface Pozo {
   tuberias: TuberiaInfo[];
   sumideros: SumideroInfo[];
   fotos: {
-    principal?: string[];
-    entradas?: string[];
-    salidas?: string[];
-    sumideros?: string[];
-    otras?: string[];
+    principal?: FotoInfo[];
+    entradas?: FotoInfo[];
+    salidas?: FotoInfo[];
+    sumideros?: FotoInfo[];
+    otras?: FotoInfo[];
   };
   
   // ========== METADATOS ==========

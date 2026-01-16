@@ -18,6 +18,11 @@ import { DropZone, DropZoneStatus, FileList, FileItem, UploadProgress, UploadSta
 import { RecommendationsPanel } from '@/components/guided';
 import { AppShell, NextStepIndicator, ProgressBar } from '@/components/layout';
 import { validateFile, isExcelFile, isImageFile } from '@/lib/validators';
+
+/**
+ * Contador global para garantizar IDs únicos en toda la sesión
+ */
+let globalFileIdCounter = 0;
 import { parseExcelFile, getParseResultSummary } from '@/lib/parsers/excelParser';
 import { parseNomenclatura } from '@/lib/parsers/nomenclatura';
 import { associatePhotosWithPozos } from '@/lib/helpers/fotoAssociationHelper';
@@ -59,7 +64,11 @@ export default function UploadPage() {
    * Genera un ID único para archivos
    */
   const generateFileId = useCallback(() => {
-    return `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    // Usar timestamp + contador global + random para garantizar unicidad
+    const timestamp = Date.now();
+    const counter = ++globalFileIdCounter;
+    const random = Math.random().toString(36).substr(2, 9);
+    return `file-${timestamp}-${counter}-${random}`;
   }, []);
 
   /**
@@ -264,7 +273,6 @@ export default function UploadPage() {
     // Guardar en estado local (acumulativo)
     setProcessedPozos(prev => [...prev, ...allPozos]);
     setProcessedPhotos(prev => [...prev, ...allPhotos]);
-    setFiles(prev => [...prev, ...fileItems]);
     
     // FIX: Problema #2 - Asociar fotos con pozos
     // Las fotos se guardaban en el store pero no se asociaban con los pozos

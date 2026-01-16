@@ -61,10 +61,18 @@ const DEFAULT_ACCEPT = {
 const DEFAULT_MAX_SIZE = 50 * 1024 * 1024;
 
 /**
+ * Contador global para garantizar IDs únicos
+ */
+let fileIdCounter = 0;
+
+/**
  * Genera un ID único para archivos
  */
 function generateFileId(): string {
-  return `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const timestamp = Date.now();
+  const counter = ++fileIdCounter;
+  const random = Math.random().toString(36).substr(2, 9);
+  return `file-${timestamp}-${counter}-${random}`;
 }
 
 /**

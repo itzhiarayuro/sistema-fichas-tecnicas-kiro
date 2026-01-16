@@ -5,6 +5,10 @@
  * FIX: Problema #2 - Las fotos no se asociaban con los pozos
  * Las fotos se guardaban en el store global pero pozo.fotos estaba vacío
  * Solución: Crear función que asocie fotos después de cargar
+ * 
+ * FIX: Problema #3 - Las fotos perdían dataUrl
+ * Solo se guardaban los IDs, no los objetos FotoInfo completos
+ * Solución: Guardar objetos FotoInfo completos con dataUrl
  */
 
 import type { Pozo, FotoInfo } from '@/types';
@@ -12,11 +16,11 @@ import { parseNomenclatura } from '@/lib/parsers/nomenclatura';
 
 /**
  * Asocia fotos del store global con los pozos
- * Modifica los pozos in-place para llenar pozo.fotos
+ * Modifica los pozos in-place para llenar pozo.fotos con objetos FotoInfo completos
  * 
  * @param pozos - Array de pozos a actualizar
- * @param fotos - Map de fotos del store global
- * @returns Array de pozos con fotos asociadas
+ * @param fotos - Map de fotos del store global (con dataUrl)
+ * @returns Array de pozos con fotos asociadas (incluyendo dataUrl)
  */
 export function associatePhotosWithPozos(
   pozos: Pozo[],
@@ -47,39 +51,47 @@ export function associatePhotosWithPozos(
       return fotoCodigo.toUpperCase() === pozoCodigo.toUpperCase();
     });
     
-    // Categorizar fotos por tipo
+    // Categorizar fotos por tipo (guardando objetos FotoInfo completos)
     const fotosCategorizadas = {
-      principal: [] as string[],
-      entradas: [] as string[],
-      salidas: [] as string[],
-      sumideros: [] as string[],
-      otras: [] as string[],
+      principal: [] as FotoInfo[],
+      entradas: [] as FotoInfo[],
+      salidas: [] as FotoInfo[],
+      sumideros: [] as FotoInfo[],
+      otras: [] as FotoInfo[],
     };
     
     fotosDelPozo.forEach(foto => {
-      // Usar el ID de la foto (puede ser 'id' o 'idFoto' dependiendo de la estructura)
-      const fotoId = (foto as any).id || (foto as any).idFoto;
-      if (!fotoId) return;
+      // Crear objeto FotoInfo completo con dataUrl
+      const fotoInfo: FotoInfo = {
+        idFoto: foto.id || foto.idFoto || `foto-${Date.now()}`,
+        idPozo: typeof pozo.idPozo === 'string' ? pozo.idPozo : (pozo.idPozo as any)?.value || '',
+        tipoFoto: foto.tipoFoto || 'general',
+        rutaArchivo: foto.filename || '',
+        fechaCaptura: foto.fechaCaptura || new Date().toISOString(),
+        descripcion: foto.descripcion || '',
+        dataUrl: foto.dataUrl, // ← IMPORTANTE: Mantener dataUrl
+        filename: foto.filename,
+      };
       
       // Parsear nomenclatura para determinar categoría
       const nomenclatura = parseNomenclatura(foto.filename || '');
       
-      // Guardar el ID de la foto en la categoría correspondiente
+      // Guardar el objeto FotoInfo completo en la categoría correspondiente
       switch (nomenclatura.categoria) {
         case 'PRINCIPAL':
-          fotosCategorizadas.principal.push(fotoId);
+          fotosCategorizadas.principal.push(fotoInfo);
           break;
         case 'ENTRADA':
-          fotosCategorizadas.entradas.push(fotoId);
+          fotosCategorizadas.entradas.push(fotoInfo);
           break;
         case 'SALIDA':
-          fotosCategorizadas.salidas.push(fotoId);
+          fotosCategorizadas.salidas.push(fotoInfo);
           break;
         case 'SUMIDERO':
-          fotosCategorizadas.sumideros.push(fotoId);
+          fotosCategorizadas.sumideros.push(fotoInfo);
           break;
         default:
-          fotosCategorizadas.otras.push(fotoId);
+          fotosCategorizadas.otras.push(fotoInfo);
       }
     });
     
@@ -96,7 +108,7 @@ export function associatePhotosWithPozos(
  * Útil cuando se agrega una foto después de la carga inicial
  * 
  * @param pozo - Pozo a actualizar
- * @param foto - Foto a asociar
+ * @param foto - Foto a asociar (con dataUrl)
  * @returns Pozo actualizado
  */
 export function associatePhotoWithPozo(pozo: Pozo, foto: any): Pozo {
@@ -120,28 +132,36 @@ export function associatePhotoWithPozo(pozo: Pozo, foto: any): Pozo {
   // Parsear nomenclatura para determinar categoría
   const nomenclatura = parseNomenclatura(foto.filename);
   
-  // Usar el ID de la foto
-  const fotoId = foto.id || foto.idFoto;
-  if (!fotoId) return pozo;
+  // Crear objeto FotoInfo completo con dataUrl
+  const fotoInfo: FotoInfo = {
+    idFoto: foto.id || foto.idFoto || `foto-${Date.now()}`,
+    idPozo: typeof pozo.idPozo === 'string' ? pozo.idPozo : (pozo.idPozo as any)?.value || '',
+    tipoFoto: foto.tipoFoto || 'general',
+    rutaArchivo: foto.filename || '',
+    fechaCaptura: foto.fechaCaptura || new Date().toISOString(),
+    descripcion: foto.descripcion || '',
+    dataUrl: foto.dataUrl, // ← IMPORTANTE: Mantener dataUrl
+    filename: foto.filename,
+  };
   
   // Crear copia del pozo con la foto asociada
   const fotosActualizadas = { ...pozo.fotos };
   
   switch (nomenclatura.categoria) {
     case 'PRINCIPAL':
-      fotosActualizadas.principal = [...(fotosActualizadas.principal || []), fotoId];
+      fotosActualizadas.principal = [...(fotosActualizadas.principal || []), fotoInfo];
       break;
     case 'ENTRADA':
-      fotosActualizadas.entradas = [...(fotosActualizadas.entradas || []), fotoId];
+      fotosActualizadas.entradas = [...(fotosActualizadas.entradas || []), fotoInfo];
       break;
     case 'SALIDA':
-      fotosActualizadas.salidas = [...(fotosActualizadas.salidas || []), fotoId];
+      fotosActualizadas.salidas = [...(fotosActualizadas.salidas || []), fotoInfo];
       break;
     case 'SUMIDERO':
-      fotosActualizadas.sumideros = [...(fotosActualizadas.sumideros || []), fotoId];
+      fotosActualizadas.sumideros = [...(fotosActualizadas.sumideros || []), fotoInfo];
       break;
     default:
-      fotosActualizadas.otras = [...(fotosActualizadas.otras || []), fotoId];
+      fotosActualizadas.otras = [...(fotosActualizadas.otras || []), fotoInfo];
   }
   
   return {
@@ -160,11 +180,26 @@ export function associatePhotoWithPozo(pozo: Pozo, foto: any): Pozo {
  */
 export function disassociatePhotoFromPozo(pozo: Pozo, fotoId: string): Pozo {
   const fotosActualizadas = {
-    principal: (pozo.fotos.principal || []).filter(id => id !== fotoId),
-    entradas: (pozo.fotos.entradas || []).filter(id => id !== fotoId),
-    salidas: (pozo.fotos.salidas || []).filter(id => id !== fotoId),
-    sumideros: (pozo.fotos.sumideros || []).filter(id => id !== fotoId),
-    otras: (pozo.fotos.otras || []).filter(id => id !== fotoId),
+    principal: (pozo.fotos.principal || []).filter((foto) => {
+      const id = typeof foto === 'string' ? foto : (typeof foto.idFoto === 'string' ? foto.idFoto : (foto.idFoto as any)?.value);
+      return id !== fotoId;
+    }),
+    entradas: (pozo.fotos.entradas || []).filter((foto) => {
+      const id = typeof foto === 'string' ? foto : (typeof foto.idFoto === 'string' ? foto.idFoto : (foto.idFoto as any)?.value);
+      return id !== fotoId;
+    }),
+    salidas: (pozo.fotos.salidas || []).filter((foto) => {
+      const id = typeof foto === 'string' ? foto : (typeof foto.idFoto === 'string' ? foto.idFoto : (foto.idFoto as any)?.value);
+      return id !== fotoId;
+    }),
+    sumideros: (pozo.fotos.sumideros || []).filter((foto) => {
+      const id = typeof foto === 'string' ? foto : (typeof foto.idFoto === 'string' ? foto.idFoto : (foto.idFoto as any)?.value);
+      return id !== fotoId;
+    }),
+    otras: (pozo.fotos.otras || []).filter((foto) => {
+      const id = typeof foto === 'string' ? foto : (typeof foto.idFoto === 'string' ? foto.idFoto : (foto.idFoto as any)?.value);
+      return id !== fotoId;
+    }),
   };
   
   return {

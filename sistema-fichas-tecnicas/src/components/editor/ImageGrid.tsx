@@ -35,6 +35,17 @@ import { ImageEditor } from './ImageEditor';
 import type { FotoInfo } from '@/types/pozo';
 import type { ImageSize } from '@/types/ficha';
 
+/**
+ * Extrae el ID de una FotoInfo de forma segura
+ */
+function getFotoId(foto: FotoInfo): string {
+  if (typeof foto.idFoto === 'string') return foto.idFoto;
+  if (typeof foto.idFoto === 'object' && foto.idFoto && 'value' in foto.idFoto) {
+    return (foto.idFoto as any).value;
+  }
+  return foto.id || `foto-${Math.random()}`;
+}
+
 interface ImageGridProps {
   /** Lista de imágenes */
   images: FotoInfo[];
@@ -235,20 +246,23 @@ export function ImageGrid({
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <SortableContext items={images.map((img) => img.id)} strategy={rectSortingStrategy}>
+        <SortableContext items={images.map((img) => getFotoId(img))} strategy={rectSortingStrategy}>
           <div className="flex flex-wrap gap-4 pb-12">
-            {images.map((image) => (
-              <SortableImage
-                key={image.id}
-                image={image}
-                size={imageSizes.get(image.id)}
-                editable={editable}
-                selected={selectedId === image.id}
-                onSelect={() => handleSelect(image.id)}
-                onRemove={() => handleRemove(image.id)}
-                onResize={(size) => handleResize(image.id, size)}
-              />
-            ))}
+            {images.map((image) => {
+              const fotoId = getFotoId(image);
+              return (
+                <SortableImage
+                  key={fotoId}
+                  image={image}
+                  size={imageSizes.get(fotoId)}
+                  editable={editable}
+                  selected={selectedId === fotoId}
+                  onSelect={() => handleSelect(fotoId)}
+                  onRemove={() => handleRemove(fotoId)}
+                  onResize={(size) => handleResize(fotoId, size)}
+                />
+              );
+            })}
           </div>
         </SortableContext>
 
@@ -256,7 +270,7 @@ export function ImageGrid({
           {activeImage && (
             <ImageEditor
               image={activeImage}
-              size={imageSizes.get(activeImage.id)}
+              size={imageSizes.get(getFotoId(activeImage))}
               editable={false}
               isDragging
             />

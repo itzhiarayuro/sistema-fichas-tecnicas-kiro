@@ -52,7 +52,7 @@ export const BASE_STATE: FichaState = {
       titleSize: 16,
       labelSize: 12,
       valueSize: 14,
-      fontFamily: 'Arial, sans-serif',
+      fontFamily: 'Inter',
     },
     spacing: {
       sectionGap: 16,

@@ -2,56 +2,29 @@
  * PDFMakeGenerator - Generación de PDFs con pdfmake
  * Requirements: 7.1, 7.2, 5.1-5.5
  * 
- * Migración de jsPDF a pdfmake con mejoras:
- * - Cero espacios en selección de texto
- * - Soporte UTF-8 nativo para tildes y ñ
- * - Layout profesional con tablas
- * - Mejor rendimiento
- * 
- * Incluye todos los 33 campos del diccionario de datos
+ * Usa Helvetica como fuente estándar (incluida en PDF)
+ * Integra validación, prevención de errores, manejo de recursos y monitoreo
  */
 
 import type { TDocumentDefinitions, ContentTable } from 'pdfmake/interfaces';
 import type { FichaState, FichaCustomization } from '@/types/ficha';
-import type { Pozo, FotoInfo } from '@/types/pozo';
+import type { Pozo } from '@/types/pozo';
+import { validatePozoForPDF } from './pdfValidationEngine';
+import { preventKnownIssues, logErrorForAnalysis } from './errorPreventionSystem';
+import { estimateResources, releaseMemory, MemoryMonitor } from './resourceManagementSystem';
+import { attemptRecovery, RecoveryStateManager, saveProgressState } from './recoverySystem';
+import { globalMonitor } from './monitoringSystem';
+import { debugLogger } from './debugLogger';
+import { generatePdfContent, validatePozoForPhotoGeneration } from './designBasedPdfGenerator';
+import { getPdfMakeForServer } from './pdfMakeServerInit';
 
-// No importar pdfmake aquí - se importará dinámicamente en generatePDF
-
-// Configuración de estilos
 const STYLES = {
-  header: {
-    fontSize: 16,
-    bold: true,
-    color: '#FFFFFF',
-    alignment: 'center' as const,
-  },
-  sectionTitle: {
-    fontSize: 12,
-    bold: true,
-    color: '#FFFFFF',
-    fillColor: '#1F4E79',
-    margin: [0, 8, 0, 4],
-  },
-  label: {
-    fontSize: 9,
-    bold: true,
-    color: '#666666',
-  },
-  value: {
-    fontSize: 10,
-    color: '#000000',
-  },
-  tableHeader: {
-    fontSize: 9,
-    bold: true,
-    color: '#FFFFFF',
-    fillColor: '#1F4E79',
-    alignment: 'center' as const,
-  },
-  tableCell: {
-    fontSize: 9,
-    color: '#000000',
-  },
+  header: { fontSize: 16, bold: true, color: '#FFFFFF', alignment: 'center' as const },
+  sectionTitle: { fontSize: 12, bold: true, color: '#FFFFFF', fillColor: '#1F4E79', margin: [0, 8, 0, 4] },
+  label: { fontSize: 9, bold: true, color: '#666666' },
+  value: { fontSize: 10, color: '#000000' },
+  tableHeader: { fontSize: 9, bold: true, color: '#FFFFFF', fillColor: '#1F4E79', alignment: 'center' as const },
+  tableCell: { fontSize: 9, color: '#000000' },
 };
 
 export interface PDFGeneratorOptions {
@@ -69,557 +42,371 @@ export interface PDFGenerationResult {
   pageCount?: number;
 }
 
-/**
- * Extraer valor de FieldValue
- */
-function getFieldValue(field: any): string {
+function getFieldValue(field: unknown): string {
   if (!field) return '';
   if (typeof field === 'string') return field;
-  if (field.value) return field.value;
+  if (typeof field === 'object' && field !== null && 'value' in field) {
+    return String((field as { value: unknown }).value || '');
+  }
   return '';
 }
 
-/**
- * Crear fila de tabla con etiqueta y valor
- */
-function createFieldRow(label: string, value: string): any[] {
+function createFieldRow(label: string, value: string): unknown[] {
   return [
-    { text: label, style: 'label', width: '40%' },
-    { text: value || '-', style: 'value', width: '60%' },
+    { text: label, style: 'label' },
+    { text: value || '-', style: 'value' },
   ];
 }
 
-/**
- * Crear tabla de dos columnas
- */
-function createTwoColumnTable(rows: any[][]): ContentTable {
-  return {
-    table: {
-      widths: ['50%', '50%'],
-      body: rows,
-    },
-    layout: 'noBorders',
-  };
+function createTwoColumnTable(rows: unknown[][]): ContentTable {
+  return { table: { widths: ['40%', '60%'], body: rows }, layout: 'noBorders' };
 }
+
 
 export class PDFMakeGenerator {
   private defaultCustomization: FichaCustomization = {
-    colors: {
-      headerBg: '#1F4E79',
-      headerText: '#FFFFFF',
-      sectionBg: '#F5F5F5',
-      sectionText: '#333333',
-      labelText: '#666666',
-      valueText: '#000000',
-      borderColor: '#CCCCCC',
-    },
-    fonts: {
-      titleSize: 14,
-      labelSize: 9,
-      valueSize: 10,
-      fontFamily: 'Roboto', // pdfmake usa Roboto por defecto
-    },
-    spacing: {
-      sectionGap: 8,
-      fieldGap: 4,
-      padding: 5,
-      margin: 15,
-    },
+    colors: { headerBg: '#1F4E79', headerText: '#FFFFFF', sectionBg: '#F5F5F5', sectionText: '#333333', labelText: '#666666', valueText: '#000000', borderColor: '#CCCCCC' },
+    fonts: { titleSize: 14, labelSize: 9, valueSize: 10, fontFamily: 'Helvetica' },
+    spacing: { sectionGap: 8, fieldGap: 4, padding: 5, margin: 15 },
     template: 'default',
     isGlobal: false,
   };
 
-  /**
-   * Generar PDF con pdfmake
-   */
-  async generatePDF(
-    ficha: FichaState,
-    pozo: Pozo,
-    options: PDFGeneratorOptions = {}
-  ): Promise<PDFGenerationResult> {
+  private recoveryManager = new RecoveryStateManager();
+  private memoryMonitor = new MemoryMonitor();
+
+  async generatePDF(_ficha: FichaState, pozo: Pozo, options: PDFGeneratorOptions = {}): Promise<PDFGenerationResult> {
+    const startTime = new Date();
+    const pozoId = getFieldValue(pozo.idPozo) || 'unknown';
+    
+    debugLogger.info('PDFMakeGenerator', 'Starting PDF generation', { pozoId });
+
     try {
-      // Importar pdfmake dinámicamente
-      const pdfMakeModule = await import('pdfmake/build/pdfmake');
-      const pdfMake = pdfMakeModule.default || pdfMakeModule;
-      
-      // Cargar las fuentes de Roboto (incluidas por defecto en pdfmake)
-      try {
-        const pdfFontsModule = await import('pdfmake/build/vfs_fonts');
-        
-        // Manejar diferentes estructuras de exportación del módulo vfs_fonts
-        if (pdfFontsModule?.pdfMake?.vfs) {
-          pdfMake.vfs = pdfFontsModule.pdfMake.vfs;
-        } else if (pdfFontsModule?.default?.pdfMake?.vfs) {
-          pdfMake.vfs = pdfFontsModule.default.pdfMake.vfs;
-        } else if (pdfFontsModule?.default) {
-          pdfMake.vfs = pdfFontsModule.default;
-        } else if (pdfFontsModule?.vfs) {
-          pdfMake.vfs = pdfFontsModule.vfs;
-        } else {
-          // Intentar asignar el módulo completo
-          const keys = Object.keys(pdfFontsModule);
-          console.warn('Estructura de fuentes no reconocida, keys:', keys);
-          // Buscar cualquier objeto que tenga vfs
-          for (const key of keys) {
-            const obj = (pdfFontsModule as Record<string, any>)[key];
-            if (obj && typeof obj === 'object' && 'vfs' in obj) {
-              pdfMake.vfs = obj.vfs;
-              break;
-            }
-          }
-        }
-      } catch (e) {
-        console.error('Error cargando fuentes de pdfmake:', e);
-        throw new Error('No se pudieron cargar las fuentes para generar el PDF');
+      // 1. Validar datos de entrada
+      debugLogger.debug('PDFMakeGenerator', 'Validating input data', { pozoId });
+      const validationResult = validatePozoForPDF(pozo);
+      if (!validationResult.isValid) {
+        const errors = validationResult.errors.map((e) => e.message).join('; ');
+        debugLogger.error('PDFMakeGenerator', 'Validation failed', { pozoId, errors });
+        throw new Error(`Validación fallida: ${errors}`);
       }
+      debugLogger.info('PDFMakeGenerator', 'Validation passed', { pozoId });
+
+      // 2. Prevenir errores conocidos
+      debugLogger.debug('PDFMakeGenerator', 'Preventing known issues', { pozoId });
+      const preventionResult = await preventKnownIssues(pozo);
+      if (!preventionResult.canProceed) {
+        const warnings = preventionResult.warnings.join('; ');
+        debugLogger.error('PDFMakeGenerator', 'Prevention check failed', { pozoId, warnings });
+        throw new Error('No se puede proceder: ' + warnings);
+      }
+      debugLogger.info('PDFMakeGenerator', 'Prevention check passed', { pozoId });
+
+      // 3. Estimar recursos
+      debugLogger.debug('PDFMakeGenerator', 'Estimating resources', { pozoId });
+      const resourceEstimate = estimateResources(pozo);
+      if (!resourceEstimate.canGenerate) {
+        const warnings = resourceEstimate.warnings.join('; ');
+        debugLogger.error('PDFMakeGenerator', 'Insufficient resources', { pozoId, warnings });
+        throw new Error('Recursos insuficientes: ' + warnings);
+      }
+      debugLogger.info('PDFMakeGenerator', 'Resource estimation passed', {
+        pozoId,
+        recommendedQuality: resourceEstimate.recommendedQuality,
+      });
+
+      // 4. Crear estado de recuperación
+      debugLogger.debug('PDFMakeGenerator', 'Creating recovery state', { pozoId });
+      this.recoveryManager.createState(pozoId);
+      this.memoryMonitor.recordSnapshot();
+
+      // 5. Generar PDF
+      debugLogger.debug('PDFMakeGenerator', 'Loading pdfmake', { pozoId });
+      const pdfMake = await getPdfMakeForServer();
       
-      const customization = this.mergeCustomization(ficha.customizations);
-      
-      // Construir documento - usar Roboto que es la fuente por defecto de pdfmake
+      debugLogger.debug('PDFMakeGenerator', 'Building document definition', { pozoId });
       const docDefinition: TDocumentDefinitions = {
         pageSize: 'A4',
-        pageMargins: [12, 12, 12, 12],
-        defaultStyle: {
-          font: 'Roboto', // pdfmake incluye Roboto por defecto
-          fontSize: 10,
-        },
-        styles: {
-          header: STYLES.header,
-          sectionTitle: STYLES.sectionTitle,
-          label: STYLES.label,
-          value: STYLES.value,
-          tableHeader: STYLES.tableHeader,
-          tableCell: STYLES.tableCell,
-        },
-        content: await this.buildContent(ficha, pozo, customization, options),
+        pageMargins: [12, 60, 12, 40],
+        defaultStyle: { fontSize: 10, font: 'Helvetica' },
+        styles: { header: STYLES.header, sectionTitle: STYLES.sectionTitle, label: STYLES.label, value: STYLES.value, tableHeader: STYLES.tableHeader, tableCell: STYLES.tableCell },
+        header: this.buildHeader(pozo),
+        content: generatePdfContent(pozo, true),
         footer: options.pageNumbers ? this.buildFooter() : undefined,
       };
 
-      // Verificar que pdfMake esté correctamente configurado
-      if (!pdfMake.vfs) {
-        console.warn('pdfMake.vfs no está disponible, usando configuración básica');
-      }
-
-      // Generar PDF
-      return new Promise((resolve) => {
+      debugLogger.debug('PDFMakeGenerator', 'Creating PDF blob', { pozoId });
+      const result = await new Promise<PDFGenerationResult>((resolve) => {
         pdfMake.createPdf(docDefinition).getBlob((blob: Blob) => {
-          const pozoId = getFieldValue(pozo.identificacion?.idPozo) || 'ficha';
-          resolve({
-            success: true,
-            blob,
-            filename: `ficha_${pozoId}_${Date.now()}.pdf`,
-            pageCount: 1,
+          const filename = `ficha_${pozoId}_${Date.now()}.pdf`;
+          
+          debugLogger.info('PDFMakeGenerator', 'PDF blob created successfully', {
+            pozoId,
+            filename,
+            blobSizeMB: (blob.size / 1024 / 1024).toFixed(2),
           });
+
+          // Registrar en monitoreo
+          const endTime = new Date();
+          const duration = endTime.getTime() - startTime.getTime();
+          const photoCount = 
+            (pozo.fotos?.principal?.length || 0) +
+            (pozo.fotos?.entradas?.length || 0) +
+            (pozo.fotos?.salidas?.length || 0) +
+            (pozo.fotos?.sumideros?.length || 0) +
+            (pozo.fotos?.otras?.length || 0);
+
+          globalMonitor.trackGeneration({
+            pozoId,
+            startTime,
+            endTime,
+            duration,
+            success: true,
+            photoCount,
+            memoryUsedMB: this.memoryMonitor.getPeakMemoryUsage() / 1024 / 1024,
+            browser: typeof navigator !== 'undefined' ? navigator.userAgent : 'Node.js',
+          });
+
+          // Limpiar memoria
+          releaseMemory();
+          this.recoveryManager.clearState(pozoId);
+
+          resolve({ success: true, blob, filename, pageCount: 1 });
         });
       });
+
+      debugLogger.info('PDFMakeGenerator', 'PDF generation completed successfully', { pozoId });
+      return result;
     } catch (error) {
+      debugLogger.error('PDFMakeGenerator', 'PDF generation failed', {
+        pozoId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+
       console.error('PDF Generation Error:', error);
-      return {
+      
+      // Registrar error en monitoreo
+      const endTime = new Date();
+      const duration = endTime.getTime() - startTime.getTime();
+      
+      globalMonitor.trackGeneration({
+        pozoId,
+        startTime,
+        endTime,
+        duration,
         success: false,
-        error: error instanceof Error ? error.message : 'Error desconocido',
-      };
+        error: error instanceof Error ? error.message : 'Unknown error',
+        photoCount: 0,
+        memoryUsedMB: this.memoryMonitor.getPeakMemoryUsage() / 1024 / 1024,
+        browser: typeof navigator !== 'undefined' ? navigator.userAgent : 'Node.js',
+      });
+
+      // Intentar recuperación
+      const recoveryAttempt = await attemptRecovery(error, pozo, { options });
+      this.recoveryManager.recordAttempt(pozoId, recoveryAttempt);
+
+      // Guardar estado para recuperación manual
+      saveProgressState(pozoId, { pozo, options, error: error instanceof Error ? error.message : String(error) });
+
+      // Registrar para análisis
+      logErrorForAnalysis(error, { pozoId, options });
+
+      return { success: false, error: error instanceof Error ? error.message : 'Error desconocido' };
     }
   }
 
-  /**
-   * Construir contenido del PDF
-   */
-  private async buildContent(
-    ficha: FichaState,
-    pozo: Pozo,
-    customization: FichaCustomization,
-    options: PDFGeneratorOptions
-  ): Promise<any[]> {
-    const content: any[] = [];
-
-    // Encabezado
-    content.push(this.buildHeader(pozo));
-    content.push({ text: '', margin: [0, 8] });
-
-    // Identificación
+  private buildContent(pozo: Pozo): unknown[] {
+    const content: unknown[] = [];
     content.push(this.buildIdentificacionSection(pozo));
     content.push({ text: '', margin: [0, 8] });
-
-    // Ubicación
     content.push(this.buildUbicacionSection(pozo));
     content.push({ text: '', margin: [0, 8] });
-
-    // Estructura
-    content.push(this.buildEstructuraSection(pozo));
+    content.push(this.buildComponentesSection(pozo));
     content.push({ text: '', margin: [0, 8] });
-
-    // Tuberías
-    if (pozo.tuberias && pozo.tuberias.length > 0) {
+    if (pozo.tuberias?.length > 0) {
       content.push(this.buildTuberiasSection(pozo));
       content.push({ text: '', margin: [0, 8] });
     }
-
-    // Sumideros
-    if (pozo.sumideros && pozo.sumideros.length > 0) {
+    if (pozo.sumideros?.length > 0) {
       content.push(this.buildSumiderosSection(pozo));
       content.push({ text: '', margin: [0, 8] });
     }
-
-    // Fotos
-    if (pozo.fotos && this.hasFotos(pozo.fotos)) {
-      content.push(await this.buildFotosSection(pozo));
-      content.push({ text: '', margin: [0, 8] });
-    }
-
-    // Observaciones
-    if (pozo.observaciones) {
-      content.push(this.buildObservacionesSection(pozo));
-    }
-
+    const obs = getFieldValue(pozo.observaciones);
+    if (obs) content.push(this.buildObservacionesSection(pozo));
     return content;
   }
 
-  /**
-   * Construir encabezado
-   */
-  private buildHeader(pozo: Pozo): any {
-    const pozoId = getFieldValue(pozo.identificacion?.idPozo);
-    return {
-      table: {
-        widths: ['*'],
-        body: [
-          [
-            {
-              text: 'FICHA TÉCNICA DE POZO DE INSPECCIÓN',
-              style: 'header',
-              fillColor: '#1F4E79',
-              padding: [10, 0],
-            },
-          ],
-          [
-            {
-              text: `Pozo: ${pozoId}`,
-              fontSize: 12,
-              bold: true,
-              padding: [8, 0],
-            },
-          ],
+  private buildHeader(pozo: Pozo): unknown {
+    return (currentPage: number, pageCount: number) => {
+      return {
+        stack: [
+          {
+            table: { widths: ['*'], body: [
+              [{ text: 'FICHA TÉCNICA DE POZO DE INSPECCIÓN', style: 'header', fillColor: '#1F4E79', margin: [0, 8, 0, 8] }],
+              [{ text: `Pozo: ${getFieldValue(pozo.idPozo)}`, fontSize: 11, bold: true, alignment: 'center', margin: [0, 4, 0, 4] }],
+            ]},
+            layout: 'noBorders',
+          },
+          { text: '', margin: [0, 4] },
         ],
-      },
-      layout: 'noBorders',
+      };
     };
   }
 
-  /**
-   * Construir sección de identificación
-   */
-  private buildIdentificacionSection(pozo: Pozo): any {
-    const ident = pozo.identificacion;
-    if (!ident) return { text: '' };
-
+  private buildIdentificacionSection(pozo: Pozo): unknown {
     return {
       stack: [
-        { text: 'IDENTIFICACIÓN', style: 'sectionTitle' },
+        { text: 'IDENTIFICACIÓN', style: 'sectionTitle', margin: [0, 0, 0, 8] },
         createTwoColumnTable([
-          createFieldRow('ID Pozo', getFieldValue(ident.idPozo)),
-          createFieldRow('Coordenada X', getFieldValue(ident.coordenadaX)),
-          createFieldRow('Coordenada Y', getFieldValue(ident.coordenadaY)),
-          createFieldRow('Fecha', getFieldValue(ident.fecha)),
-          createFieldRow('Levantó', getFieldValue(ident.levanto)),
-          createFieldRow('Estado', getFieldValue(ident.estado)),
+          createFieldRow('ID Pozo', getFieldValue(pozo.idPozo)),
+          createFieldRow('Coordenada X', getFieldValue(pozo.coordenadaX)),
+          createFieldRow('Coordenada Y', getFieldValue(pozo.coordenadaY)),
+          createFieldRow('Fecha', getFieldValue(pozo.fecha)),
+          createFieldRow('Levantó', getFieldValue(pozo.levanto)),
+          createFieldRow('Estado', getFieldValue(pozo.estado)),
         ]),
       ],
     };
   }
 
-  /**
-   * Construir sección de ubicación
-   */
-  private buildUbicacionSection(pozo: Pozo): any {
-    const ubic = pozo.ubicacion;
-    if (!ubic) return { text: '' };
-
+  private buildUbicacionSection(pozo: Pozo): unknown {
     return {
       stack: [
-        { text: 'UBICACIÓN', style: 'sectionTitle' },
+        { text: 'UBICACIÓN', style: 'sectionTitle', margin: [0, 0, 0, 8] },
         createTwoColumnTable([
-          createFieldRow('Dirección', getFieldValue(ubic.direccion)),
-          createFieldRow('Barrio', getFieldValue(ubic.barrio)),
-          createFieldRow('Elevación', getFieldValue(ubic.elevacion)),
-          createFieldRow('Profundidad', getFieldValue(ubic.profundidad)),
+          createFieldRow('Dirección', getFieldValue(pozo.direccion)),
+          createFieldRow('Barrio', getFieldValue(pozo.barrio)),
+          createFieldRow('Elevación', getFieldValue(pozo.elevacion)),
+          createFieldRow('Profundidad', getFieldValue(pozo.profundidad)),
         ]),
       ],
     };
   }
 
-  /**
-   * Construir sección de estructura
-   */
-  private buildEstructuraSection(pozo: Pozo): any {
-    const est = pozo.estructura;
-    if (!est) return { text: '' };
 
+  private buildComponentesSection(pozo: Pozo): unknown {
     return {
       stack: [
-        { text: 'ESTRUCTURA', style: 'sectionTitle' },
+        { text: 'COMPONENTES', style: 'sectionTitle', margin: [0, 0, 0, 8] },
         createTwoColumnTable([
-          createFieldRow('Tapa', getFieldValue(est.tapa)),
-          createFieldRow('Cilindro', getFieldValue(est.cilindro)),
-          createFieldRow('Cono', getFieldValue(est.cono)),
-          createFieldRow('Peldaños', getFieldValue(est.peldanos)),
-          createFieldRow('Material Cilindro', getFieldValue(est.materialCilindro)),
-          createFieldRow('Material Cono', getFieldValue(est.materialCono)),
-          createFieldRow('Diámetro Cilindro', getFieldValue(est.diametroCilindro)),
-          createFieldRow('Diámetro Cono', getFieldValue(est.diametroCono)),
-          createFieldRow('Profundidad Cilindro', getFieldValue(est.profundidadCilindro)),
-          createFieldRow('Profundidad Cono', getFieldValue(est.profundidadCono)),
-          createFieldRow('Estado Tapa', getFieldValue(est.estadoTapa)),
-          createFieldRow('Estado Cilindro', getFieldValue(est.estadoCilindro)),
-          createFieldRow('Estado Cono', getFieldValue(est.estadoCono)),
-          createFieldRow('Estado Peldaños', getFieldValue(est.estadoPeldanos)),
+          createFieldRow('Existe Tapa', getFieldValue(pozo.existeTapa)),
+          createFieldRow('Estado Tapa', getFieldValue(pozo.estadoTapa)),
+          createFieldRow('Material Tapa', getFieldValue(pozo.materialTapa)),
+          createFieldRow('Existe Cilindro', getFieldValue(pozo.existeCilindro)),
+          createFieldRow('Diámetro Cilindro', getFieldValue(pozo.diametroCilindro)),
+          createFieldRow('Material Cilindro', getFieldValue(pozo.materialCilindro)),
+          createFieldRow('Estado Cilindro', getFieldValue(pozo.estadoCilindro)),
+          createFieldRow('Existe Cono', getFieldValue(pozo.existeCono)),
+          createFieldRow('Tipo Cono', getFieldValue(pozo.tipoCono)),
+          createFieldRow('Material Cono', getFieldValue(pozo.materialCono)),
+          createFieldRow('Estado Cono', getFieldValue(pozo.estadoCono)),
+          createFieldRow('Existe Cañuela', getFieldValue(pozo.existeCanuela)),
+          createFieldRow('Material Cañuela', getFieldValue(pozo.materialCanuela)),
+          createFieldRow('Estado Cañuela', getFieldValue(pozo.estadoCanuela)),
+          createFieldRow('Existe Peldaños', getFieldValue(pozo.existePeldanos)),
+          createFieldRow('Número Peldaños', getFieldValue(pozo.numeroPeldanos)),
+          createFieldRow('Material Peldaños', getFieldValue(pozo.materialPeldanos)),
+          createFieldRow('Estado Peldaños', getFieldValue(pozo.estadoPeldanos)),
+          createFieldRow('Sistema', getFieldValue(pozo.sistema)),
+          createFieldRow('Año Instalación', getFieldValue(pozo.anoInstalacion)),
+          createFieldRow('Tipo Cámara', getFieldValue(pozo.tipoCamara)),
+          createFieldRow('Estructura Pavimento', getFieldValue(pozo.estructuraPavimento)),
         ]),
       ],
     };
   }
 
-  /**
-   * Construir sección de tuberías
-   */
-  private buildTuberiasSection(pozo: Pozo): any {
+  private buildTuberiasSection(pozo: Pozo): unknown {
     const tuberias = pozo.tuberias || [];
-    const entradas = tuberias.filter((t: any) => getFieldValue(t.tipoTuberia) === 'entrada');
-    const salidas = tuberias.filter((t: any) => getFieldValue(t.tipoTuberia) === 'salida');
-
-    const content: any[] = [{ text: 'TUBERÍAS', style: 'sectionTitle' }];
-
+    const entradas = tuberias.filter((t) => getFieldValue(t.tipoTuberia) === 'entrada');
+    const salidas = tuberias.filter((t) => getFieldValue(t.tipoTuberia) === 'salida');
+    const content: unknown[] = [{ text: 'TUBERÍAS', style: 'sectionTitle', margin: [0, 0, 0, 8] }];
     if (entradas.length > 0) {
       content.push({ text: 'Entradas:', fontSize: 10, bold: true, margin: [0, 4, 0, 2] });
       content.push(this.buildTuberiasTable(entradas));
-      content.push({ text: '', margin: [0, 4] });
     }
-
     if (salidas.length > 0) {
       content.push({ text: 'Salidas:', fontSize: 10, bold: true, margin: [0, 4, 0, 2] });
       content.push(this.buildTuberiasTable(salidas));
     }
-
     return { stack: content };
   }
 
-  /**
-   * Construir tabla de tuberías
-   */
-  private buildTuberiasTable(tuberias: any[]): ContentTable {
-    const rows = [
-      [
-        { text: 'Diámetro', style: 'tableHeader' },
-        { text: 'Material', style: 'tableHeader' },
-        { text: 'Elevación', style: 'tableHeader' },
-        { text: 'Estado', style: 'tableHeader' },
-        { text: 'Longitud', style: 'tableHeader' },
-      ],
-    ];
-
-    tuberias.forEach((t: any) => {
+  private buildTuberiasTable(tuberias: unknown[]): ContentTable {
+    const rows: unknown[][] = [[
+      { text: 'Diámetro', style: 'tableHeader' },
+      { text: 'Material', style: 'tableHeader' },
+      { text: 'Cota', style: 'tableHeader' },
+      { text: 'Estado', style: 'tableHeader' },
+      { text: 'Longitud', style: 'tableHeader' },
+    ]];
+    tuberias.forEach((t: unknown) => {
+      const tub = t as Record<string, unknown>;
       rows.push([
-        { text: getFieldValue(t.diametro), style: 'tableCell' },
-        { text: getFieldValue(t.material), style: 'tableCell' },
-        { text: getFieldValue(t.elevacion), style: 'tableCell' },
-        { text: getFieldValue(t.estado), style: 'tableCell' },
-        { text: getFieldValue(t.longitud), style: 'tableCell' },
+        { text: getFieldValue(tub.diametro), style: 'tableCell' },
+        { text: getFieldValue(tub.material), style: 'tableCell' },
+        { text: getFieldValue(tub.cota), style: 'tableCell' },
+        { text: getFieldValue(tub.estado), style: 'tableCell' },
+        { text: getFieldValue(tub.longitud), style: 'tableCell' },
       ]);
     });
-
-    return {
-      table: {
-        widths: ['20%', '20%', '20%', '20%', '20%'],
-        body: rows,
-      },
-      layout: 'lightHorizontalLines',
-    };
+    return { table: { widths: ['20%', '20%', '20%', '20%', '20%'], body: rows }, layout: 'lightHorizontalLines' };
   }
 
-  /**
-   * Construir sección de sumideros
-   */
-  private buildSumiderosSection(pozo: Pozo): any {
-    const sumideros = pozo.sumideros || [];
-
+  private buildSumiderosSection(pozo: Pozo): unknown {
     return {
       stack: [
-        { text: 'SUMIDEROS', style: 'sectionTitle' },
-        this.buildSumiderosTable(sumideros),
+        { text: 'SUMIDEROS', style: 'sectionTitle', margin: [0, 0, 0, 8] },
+        this.buildSumiderosTable(pozo.sumideros || []),
       ],
     };
   }
 
-  /**
-   * Construir tabla de sumideros
-   */
-  private buildSumiderosTable(sumideros: any[]): ContentTable {
-    const rows = [
-      [
-        { text: 'ID', style: 'tableHeader' },
-        { text: 'Tipo', style: 'tableHeader' },
-        { text: 'Material', style: 'tableHeader' },
-        { text: 'Diámetro', style: 'tableHeader' },
-        { text: 'Profundidad', style: 'tableHeader' },
-        { text: 'Estado', style: 'tableHeader' },
-      ],
-    ];
-
-    sumideros.forEach((s: any) => {
+  private buildSumiderosTable(sumideros: unknown[]): ContentTable {
+    const rows: unknown[][] = [[
+      { text: 'ID', style: 'tableHeader' },
+      { text: 'Tipo', style: 'tableHeader' },
+      { text: 'Material', style: 'tableHeader' },
+      { text: 'Diámetro', style: 'tableHeader' },
+      { text: 'Alt. Salida', style: 'tableHeader' },
+      { text: 'Alt. Llegada', style: 'tableHeader' },
+    ]];
+    sumideros.forEach((s: unknown) => {
+      const sum = s as Record<string, unknown>;
       rows.push([
-        { text: getFieldValue(s.idSumidero), style: 'tableCell' },
-        { text: getFieldValue(s.tipo), style: 'tableCell' },
-        { text: getFieldValue(s.material), style: 'tableCell' },
-        { text: getFieldValue(s.diametro), style: 'tableCell' },
-        { text: getFieldValue(s.profundidad), style: 'tableCell' },
-        { text: getFieldValue(s.estado), style: 'tableCell' },
+        { text: getFieldValue(sum.idSumidero), style: 'tableCell' },
+        { text: getFieldValue(sum.tipoSumidero), style: 'tableCell' },
+        { text: getFieldValue(sum.materialTuberia), style: 'tableCell' },
+        { text: getFieldValue(sum.diametro), style: 'tableCell' },
+        { text: getFieldValue(sum.alturaSalida), style: 'tableCell' },
+        { text: getFieldValue(sum.alturaLlegada), style: 'tableCell' },
       ]);
     });
-
-    return {
-      table: {
-        widths: ['16.66%', '16.66%', '16.66%', '16.66%', '16.66%', '16.66%'],
-        body: rows,
-      },
-      layout: 'lightHorizontalLines',
-    };
+    return { table: { widths: ['15%', '20%', '20%', '15%', '15%', '15%'], body: rows }, layout: 'lightHorizontalLines' };
   }
 
-  /**
-   * Construir sección de fotos
-   */
-  private async buildFotosSection(pozo: Pozo): Promise<any> {
-    const fotos: any[] = [];
-
-    // Recolectar todas las fotos
-    if (pozo.fotos?.principal) fotos.push(...pozo.fotos.principal);
-    if (pozo.fotos?.entradas) fotos.push(...pozo.fotos.entradas);
-    if (pozo.fotos?.salidas) fotos.push(...pozo.fotos.salidas);
-    if (pozo.fotos?.sumideros) fotos.push(...pozo.fotos.sumideros);
-    if (pozo.fotos?.otras) fotos.push(...pozo.fotos.otras);
-
-    if (fotos.length === 0) return { text: '' };
-
-    const fotoRows: any[] = [];
-    for (let i = 0; i < fotos.length; i += 2) {
-      const foto1 = fotos[i];
-      const foto2 = fotos[i + 1];
-
-      const row: any[] = [];
-
-      if (foto1) {
-        row.push(await this.buildFotoCell(foto1));
-      }
-      if (foto2) {
-        row.push(await this.buildFotoCell(foto2));
-      }
-
-      fotoRows.push(row);
-    }
-
+  private buildObservacionesSection(pozo: Pozo): unknown {
     return {
       stack: [
-        { text: 'FOTOS', style: 'sectionTitle' },
-        {
-          table: {
-            widths: ['50%', '50%'],
-            body: fotoRows,
-          },
-          layout: 'noBorders',
-        },
+        { text: 'OBSERVACIONES', style: 'sectionTitle', margin: [0, 0, 0, 8] },
+        { text: getFieldValue(pozo.observaciones) || 'Sin observaciones', style: 'value', margin: [8, 4], alignment: 'justify' as const },
       ],
     };
   }
 
-  /**
-   * Construir celda de foto
-   */
-  private async buildFotoCell(foto: any): Promise<any> {
-    const descripcion = getFieldValue(foto.descripcion);
-    const base64 = foto.base64 || '';
-
-    return {
-      stack: [
-        base64
-          ? {
-              image: base64,
-              width: 150,
-              height: 120,
-              margin: [0, 0, 0, 4],
-            }
-          : { text: '[Foto no disponible]', fontSize: 9, color: '#999999' },
-        {
-          text: descripcion || 'Sin descripción',
-          fontSize: 8,
-          color: '#666666',
-          alignment: 'center' as const,
-        },
-      ],
-      margin: [4, 4],
-    };
+  private buildFooter(): unknown {
+    return (currentPage: number, pageCount: number) => ({
+      text: `Página ${currentPage} de ${pageCount}`,
+      alignment: 'center' as const,
+      fontSize: 9,
+      color: '#999999',
+      margin: [0, 10, 0, 0],
+    });
   }
 
-  /**
-   * Construir sección de observaciones
-   */
-  private buildObservacionesSection(pozo: Pozo): any {
-    const obs = getFieldValue(pozo.observaciones);
-    if (!obs) return { text: '' };
-
-    return {
-      stack: [
-        { text: 'OBSERVACIONES', style: 'sectionTitle' },
-        {
-          text: obs,
-          style: 'value',
-          margin: [8, 4],
-          alignment: 'justify' as const,
-        },
-      ],
-    };
-  }
-
-  /**
-   * Construir pie de página
-   */
-  private buildFooter(): any {
-    return (currentPage: number, pageCount: number) => {
-      return {
-        text: `Página ${currentPage} de ${pageCount}`,
-        alignment: 'center' as const,
-        fontSize: 9,
-        color: '#999999',
-        margin: [0, 10, 0, 0],
-      };
-    };
-  }
-
-  /**
-   * Verificar si hay fotos
-   */
-  private hasFotos(fotos: any): boolean {
-    return (
-      (fotos.principal && fotos.principal.length > 0) ||
-      (fotos.entradas && fotos.entradas.length > 0) ||
-      (fotos.salidas && fotos.salidas.length > 0) ||
-      (fotos.sumideros && fotos.sumideros.length > 0) ||
-      (fotos.otras && fotos.otras.length > 0)
-    );
-  }
-
-  /**
-   * Fusionar customizaciones
-   */
-  private mergeCustomization(customizations: any): FichaCustomization {
-    // Validar que customizations sea un array
-    if (!Array.isArray(customizations)) {
-      console.warn('customizations no es un array:', typeof customizations);
-      return this.defaultCustomization;
-    }
-
-    if (customizations.length === 0) {
-      return this.defaultCustomization;
-    }
-
-    const global = customizations.find((c: any) => c && c.isGlobal);
-    return global || this.defaultCustomization;
+  mergeCustomization(customizations: unknown): FichaCustomization {
+    if (!Array.isArray(customizations) || customizations.length === 0) return this.defaultCustomization;
+    const global = customizations.find((c: unknown) => c && typeof c === 'object' && 'isGlobal' in c && (c as { isGlobal: boolean }).isGlobal);
+    return (global as FichaCustomization) || this.defaultCustomization;
   }
 }

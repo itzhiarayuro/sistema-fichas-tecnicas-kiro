@@ -63,7 +63,7 @@ const BUILT_IN_TEMPLATES: Template[] = [
         titleSize: 14,
         labelSize: 10,
         valueSize: 10,
-        fontFamily: 'Arial',
+        fontFamily: 'Inter',
       },
     },
   },

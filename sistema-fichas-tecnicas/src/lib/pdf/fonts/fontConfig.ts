@@ -1,43 +1,37 @@
 /**
  * fontConfig.ts - Configuración de fuentes para pdfmake
  * 
- * Roboto: Fuente por defecto de pdfmake con soporte UTF-8 completo
- * Incluida automáticamente en pdfmake/build/vfs_fonts
+ * Helvetica: Fuente estándar de PDF (no requiere VFS)
  */
 
 /**
  * Definición de fuentes para pdfmake
- * Roboto está incluida por defecto en pdfmake
+ * Helvetica es una fuente estándar de PDF incluida en todos los lectores
  */
 export const fonts = {
-  Roboto: {
-    normal: 'Roboto-Regular.ttf',
-    bold: 'Roboto-Medium.ttf',
-    italics: 'Roboto-Italic.ttf',
-    bolditalics: 'Roboto-MediumItalic.ttf',
-  },
+  // No se necesita configurar fonts cuando se usa Helvetica por defecto
 };
 
 /**
  * Fuente por defecto para todos los documentos
+ * Helvetica es la fuente por defecto de pdfmake
  */
-export const DEFAULT_FONT = 'Roboto';
+export const DEFAULT_FONT = 'Helvetica';
 
 /**
  * Estilos predefinidos para formularios y tablas técnicas
  * Optimizados para legibilidad y consistencia visual
+ * NO especificar font para usar Helvetica por defecto
  */
 export const pdfStyles = {
   // Encabezados
   header: {
-    font: 'Roboto',
     fontSize: 16,
     bold: true,
     color: '#FFFFFF',
     alignment: 'center' as const,
   },
   subheader: {
-    font: 'Roboto',
     fontSize: 14,
     bold: true,
     color: '#1F4E79',
@@ -45,7 +39,6 @@ export const pdfStyles = {
   
   // Secciones
   sectionTitle: {
-    font: 'Roboto',
     fontSize: 11,
     bold: true,
     color: '#FFFFFF',
@@ -55,20 +48,17 @@ export const pdfStyles = {
   
   // Campos de formulario
   label: {
-    font: 'Roboto',
     fontSize: 9,
     bold: true,
     color: '#4A4A4A',
   },
   value: {
-    font: 'Roboto',
     fontSize: 10,
     color: '#000000',
   },
   
   // Tablas
   tableHeader: {
-    font: 'Roboto',
     fontSize: 9,
     bold: true,
     color: '#FFFFFF',
@@ -76,12 +66,10 @@ export const pdfStyles = {
     alignment: 'center' as const,
   },
   tableCell: {
-    font: 'Roboto',
     fontSize: 9,
     color: '#000000',
   },
   tableCellNumber: {
-    font: 'Roboto',
     fontSize: 9,
     color: '#000000',
     alignment: 'right' as const,
@@ -89,17 +77,14 @@ export const pdfStyles = {
   
   // Texto general
   body: {
-    font: 'Roboto',
     fontSize: 10,
     color: '#333333',
   },
   small: {
-    font: 'Roboto',
     fontSize: 8,
     color: '#666666',
   },
   footer: {
-    font: 'Roboto',
     fontSize: 8,
     color: '#999999',
     alignment: 'center' as const,

@@ -59,20 +59,25 @@ function getFieldValue(
   fichaState: FichaState | null | undefined,
   sectionType: string,
   field: string,
-  fallback: string
+  fallback: any
 ): { value: string; source: FieldValue['source']; isEdited: boolean } {
+  // Extraer valor del fallback si es un FieldValue
+  const fallbackValue = typeof fallback === 'string' 
+    ? fallback 
+    : (fallback?.value || '');
+  
   if (!fichaState) {
-    return { value: fallback, source: 'excel', isEdited: false };
+    return { value: fallbackValue, source: 'excel', isEdited: false };
   }
 
   const section = fichaState.sections.find((s) => s.type === sectionType);
   if (!section || !section.content[field]) {
-    return { value: fallback, source: 'default', isEdited: false };
+    return { value: fallbackValue, source: 'default', isEdited: false };
   }
 
   const fieldValue = section.content[field];
   return {
-    value: fieldValue.value || fallback,
+    value: fieldValue.value || fallbackValue,
     source: fieldValue.source,
     isEdited: fieldValue.source === 'manual',
   };
@@ -494,9 +499,11 @@ export function PreviewPanel({
           </h2>
           {allPhotos.length > 0 ? (
             <div className="grid grid-cols-3 gap-4">
-              {allPhotos.map((foto) => (
-                <div 
-                  key={foto.id} 
+              {allPhotos.map((foto) => {
+                const fotoId = typeof foto.idFoto === 'string' ? foto.idFoto : (foto.idFoto as any)?.value || foto.id || Math.random();
+                return (
+                  <div 
+                    key={fotoId} 
                   className="aspect-[4/3] bg-gray-100 rounded-lg overflow-hidden relative group"
                 >
                   {foto.dataUrl ? (
@@ -524,7 +531,8 @@ export function PreviewPanel({
                     </p>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="text-gray-400 italic text-center py-8" style={{ fontSize: styles.fonts.valueSize }}>

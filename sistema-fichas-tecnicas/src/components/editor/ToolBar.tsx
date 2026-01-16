@@ -5,7 +5,7 @@
  * Componente reutilizable que proporciona:
  * - Undo/Redo funcional
  * - Guardar cambios
- * - Generar PDF
+ * - Generar PDF con validación robusta
  * - Personalización de formato
  * - Indicadores de estado y sincronización
  * - Navegación y contexto
@@ -13,13 +13,16 @@
 
 'use client';
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { FichaStore } from '@/stores/fichaStore';
 import type { Pozo } from '@/types/pozo';
+import type { FichaState } from '@/types/ficha';
 import { ScopeIndicator } from './ScopeIndicator';
 import { getFieldValueOrDefault } from '@/lib/helpers/fieldValueHelpers';
 import { GuidedModeBadge } from '@/components/guided';
+import { usePdfGeneration } from '@/hooks/usePdfGeneration';
+import { useUIStore } from '@/stores';
 
 interface ToolBarProps {
   /** Store de la ficha actual */
@@ -27,6 +30,9 @@ interface ToolBarProps {
   
   /** Datos del pozo */
   pozo: Pozo;
+  
+  /** Estado de la ficha */
+  fichaState?: FichaState;
   
   /** Callback cuando se hace clic en volver */
   onBack?: () => void;
@@ -36,9 +42,6 @@ interface ToolBarProps {
   
   /** Callback cuando se hace clic en resetear formato */
   onResetFormat?: () => void;
-  
-  /** Callback cuando se hace clic en generar PDF */
-  onGeneratePDF?: () => void;
   
   /** Estado de personalización visible */
   showCustomization?: boolean;
@@ -68,10 +71,10 @@ interface ToolBarProps {
 export function ToolBar({
   fichaStore,
   pozo,
+  fichaState,
   onBack,
   onCustomizeClick,
   onResetFormat,
-  onGeneratePDF,
   showCustomization = false,
   isPending = false,
   version = 1,
@@ -82,6 +85,9 @@ export function ToolBar({
   NextStepComponent,
 }: ToolBarProps) {
   const router = useRouter();
+  const addToast = useUIStore((state) => state.addToast);
+  const { generatePdf, isLoading, progress } = usePdfGeneration();
+  const [showProgress, setShowProgress] = useState(false);
   
   // Determinar si undo/redo están disponibles
   const canUndo = useMemo(() => fichaStore.canUndo(), [fichaStore]);
@@ -125,11 +131,43 @@ export function ToolBar({
   }, [onResetFormat]);
   
   // Handler para generar PDF
-  const handleGeneratePDF = useCallback(() => {
-    if (onGeneratePDF) {
-      onGeneratePDF();
+  const handleGeneratePDF = useCallback(async () => {
+    if (!fichaState) {
+      addToast({
+        type: 'error',
+        message: 'Estado de ficha no disponible',
+        duration: 3000,
+      });
+      return;
     }
-  }, [onGeneratePDF]);
+
+    setShowProgress(true);
+    const success = await generatePdf(fichaState, pozo, {
+      endpoint: '/api/pdf',
+      onProgress: (progress) => {
+        console.log(`Progreso: ${progress}%`);
+      },
+      onError: (error) => {
+        addToast({
+          type: 'error',
+          message: error,
+          duration: 5000,
+        });
+      },
+      onSuccess: (filename) => {
+        addToast({
+          type: 'success',
+          message: `PDF generado y descargado: ${filename}`,
+          duration: 3000,
+        });
+        setShowProgress(false);
+      },
+    });
+
+    if (!success) {
+      setShowProgress(false);
+    }
+  }, [fichaState, pozo, generatePdf, addToast]);
   
   return (
     <div className="flex flex-col bg-white border-b border-gray-200">
@@ -139,6 +177,26 @@ export function ToolBar({
           <div className="flex items-center justify-between">
             {BreadcrumbsComponent && <BreadcrumbsComponent compact showLabels />}
             {NextStepComponent && <NextStepComponent variant="inline" />}
+          </div>
+        </div>
+      )}
+      
+      {/* Progress bar - Mostrar durante generación de PDF */}
+      {showProgress && (
+        <div className="px-4 py-2 bg-blue-50 border-b border-blue-200">
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-sm font-medium text-blue-900">Generando PDF...</span>
+                <span className="text-sm text-blue-700">{progress}%</span>
+              </div>
+              <div className="w-full bg-blue-200 rounded-full h-2">
+                <div
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -272,19 +330,34 @@ export function ToolBar({
           <div className="h-6 w-px bg-gray-200" />
           
           {/* Generate PDF button - Requirements 7.1 */}
-          {onGeneratePDF && (
-            <button
-              onClick={handleGeneratePDF}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-600 transition-colors"
-              title="Generar PDF"
-              aria-label="Generar PDF"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              <span className="hidden sm:inline">Generar PDF</span>
-            </button>
-          )}
+          <button
+            onClick={handleGeneratePDF}
+            disabled={isLoading}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+              isLoading
+                ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                : 'bg-primary text-white hover:bg-primary-600'
+            }`}
+            title={isLoading ? 'Generando PDF...' : 'Generar PDF'}
+            aria-label="Generar PDF"
+          >
+            {isLoading ? (
+              <>
+                <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                <span className="hidden sm:inline">Generando...</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                <span className="hidden sm:inline">Generar PDF</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
     </div>

@@ -79,12 +79,13 @@ export function ImageEditor({
   // Hook para confirmación de eliminación
   const { confirmDeleteImage } = useConfirmDialog();
 
-  // Sync local size with prop
+  // Sync local size with prop only on initial mount
   useEffect(() => {
-    if (!isResizing) {
-      setLocalSize(size);
-    }
-  }, [size, isResizing]);
+    setLocalSize(size);
+  }, []);
+
+  const onResizeRef = useRef(onResize);
+  onResizeRef.current = onResize;
 
   // Handle resize start
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
@@ -115,7 +116,8 @@ export function ImageEditor({
 
     const handleMouseUp = () => {
       setIsResizing(false);
-      onResize?.(localSize);
+      // Llamar onResize con el tamaño final
+      onResizeRef.current?.(localSize);
     };
 
     document.addEventListener('mousemove', handleMouseMove);
@@ -125,13 +127,13 @@ export function ImageEditor({
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isResizing, localSize, onResize]);
+  }, [isResizing, localSize]);
 
   // Handle preset size selection
   const handlePresetSize = useCallback((presetSize: ImageSize) => {
     setLocalSize(presetSize);
-    onResize?.(presetSize);
-  }, [onResize]);
+    onResizeRef.current?.(presetSize);
+  }, []);
 
   // Handle remove with global confirmation dialog (double confirmation)
   const handleRemoveClick = useCallback(async () => {
