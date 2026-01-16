@@ -1,34 +1,27 @@
 /**
- * fontConfig.ts - Configuración de fuentes Inter para pdfmake
+ * fontConfig.ts - Configuración de fuentes para pdfmake
  * 
- * Inter: Fuente con números tabulares y soporte UTF-8 completo
- * Ideal para formularios técnicos y tablas con datos numéricos
+ * Roboto: Fuente por defecto de pdfmake con soporte UTF-8 completo
+ * Incluida automáticamente en pdfmake/build/vfs_fonts
  */
 
 /**
  * Definición de fuentes para pdfmake
- * Mapea estilos (normal, bold, italics, bolditalics) a archivos TTF
+ * Roboto está incluida por defecto en pdfmake
  */
 export const fonts = {
-  Inter: {
-    normal: 'Inter-Regular.ttf',
-    bold: 'Inter-Bold.ttf',
-    italics: 'Inter-Italic.ttf',
-    bolditalics: 'Inter-BoldItalic.ttf',
-  },
-  // Fallback usando Medium como Bold si Bold no está disponible
-  InterMedium: {
-    normal: 'Inter-Regular.ttf',
-    bold: 'Inter-Medium.ttf',
-    italics: 'Inter-Italic.ttf',
-    bolditalics: 'Inter-Medium.ttf',
+  Roboto: {
+    normal: 'Roboto-Regular.ttf',
+    bold: 'Roboto-Medium.ttf',
+    italics: 'Roboto-Italic.ttf',
+    bolditalics: 'Roboto-MediumItalic.ttf',
   },
 };
 
 /**
  * Fuente por defecto para todos los documentos
  */
-export const DEFAULT_FONT = 'Inter';
+export const DEFAULT_FONT = 'Roboto';
 
 /**
  * Estilos predefinidos para formularios y tablas técnicas
@@ -37,14 +30,14 @@ export const DEFAULT_FONT = 'Inter';
 export const pdfStyles = {
   // Encabezados
   header: {
-    font: 'Inter',
+    font: 'Roboto',
     fontSize: 16,
     bold: true,
     color: '#FFFFFF',
     alignment: 'center' as const,
   },
   subheader: {
-    font: 'Inter',
+    font: 'Roboto',
     fontSize: 14,
     bold: true,
     color: '#1F4E79',
@@ -52,7 +45,7 @@ export const pdfStyles = {
   
   // Secciones
   sectionTitle: {
-    font: 'Inter',
+    font: 'Roboto',
     fontSize: 11,
     bold: true,
     color: '#FFFFFF',
@@ -62,20 +55,20 @@ export const pdfStyles = {
   
   // Campos de formulario
   label: {
-    font: 'Inter',
+    font: 'Roboto',
     fontSize: 9,
     bold: true,
     color: '#4A4A4A',
   },
   value: {
-    font: 'Inter',
+    font: 'Roboto',
     fontSize: 10,
     color: '#000000',
   },
   
   // Tablas
   tableHeader: {
-    font: 'Inter',
+    font: 'Roboto',
     fontSize: 9,
     bold: true,
     color: '#FFFFFF',
@@ -83,12 +76,12 @@ export const pdfStyles = {
     alignment: 'center' as const,
   },
   tableCell: {
-    font: 'Inter',
+    font: 'Roboto',
     fontSize: 9,
     color: '#000000',
   },
   tableCellNumber: {
-    font: 'Inter',
+    font: 'Roboto',
     fontSize: 9,
     color: '#000000',
     alignment: 'right' as const,
@@ -96,17 +89,17 @@ export const pdfStyles = {
   
   // Texto general
   body: {
-    font: 'Inter',
+    font: 'Roboto',
     fontSize: 10,
     color: '#333333',
   },
   small: {
-    font: 'Inter',
+    font: 'Roboto',
     fontSize: 8,
     color: '#666666',
   },
   footer: {
-    font: 'Inter',
+    font: 'Roboto',
     fontSize: 8,
     color: '#999999',
     alignment: 'center' as const,

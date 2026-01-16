@@ -11,7 +11,7 @@
  * Incluye todos los 33 campos del diccionario de datos
  */
 
-import type { TDocumentDefinition, ContentTable } from 'pdfmake/interfaces';
+import type { TDocumentDefinitions, ContentTable } from 'pdfmake/interfaces';
 import type { FichaState, FichaCustomization } from '@/types/ficha';
 import type { Pozo, FotoInfo } from '@/types/pozo';
 
@@ -117,7 +117,7 @@ export class PDFMakeGenerator {
       titleSize: 14,
       labelSize: 9,
       valueSize: 10,
-      fontFamily: 'Helvetica',
+      fontFamily: 'Roboto', // pdfmake usa Roboto por defecto
     },
     spacing: {
       sectionGap: 8,
@@ -140,38 +140,47 @@ export class PDFMakeGenerator {
     try {
       // Importar pdfmake dinámicamente
       const pdfMakeModule = await import('pdfmake/build/pdfmake');
-      const pdfMake = pdfMakeModule.default;
+      const pdfMake = pdfMakeModule.default || pdfMakeModule;
       
-      // Cargar las fuentes correctamente
+      // Cargar las fuentes de Roboto (incluidas por defecto en pdfmake)
       try {
         const pdfFontsModule = await import('pdfmake/build/vfs_fonts');
         
-        // Intentar diferentes estructuras de importación
-        if (pdfFontsModule?.default) {
-          // Estructura más común: el vfs está directamente en default
-          pdfMake.vfs = pdfFontsModule.default;
-        } else if (pdfFontsModule?.pdfMake?.vfs) {
-          // Estructura alternativa: pdfMake.vfs
+        // Manejar diferentes estructuras de exportación del módulo vfs_fonts
+        if (pdfFontsModule?.pdfMake?.vfs) {
           pdfMake.vfs = pdfFontsModule.pdfMake.vfs;
+        } else if (pdfFontsModule?.default?.pdfMake?.vfs) {
+          pdfMake.vfs = pdfFontsModule.default.pdfMake.vfs;
+        } else if (pdfFontsModule?.default) {
+          pdfMake.vfs = pdfFontsModule.default;
         } else if (pdfFontsModule?.vfs) {
-          // Estructura directa: vfs en el módulo
           pdfMake.vfs = pdfFontsModule.vfs;
         } else {
-          console.warn('Estructura de fuentes no reconocida:', Object.keys(pdfFontsModule));
+          // Intentar asignar el módulo completo
+          const keys = Object.keys(pdfFontsModule);
+          console.warn('Estructura de fuentes no reconocida, keys:', keys);
+          // Buscar cualquier objeto que tenga vfs
+          for (const key of keys) {
+            const obj = (pdfFontsModule as Record<string, any>)[key];
+            if (obj && typeof obj === 'object' && 'vfs' in obj) {
+              pdfMake.vfs = obj.vfs;
+              break;
+            }
+          }
         }
       } catch (e) {
-        console.warn('No se pudieron cargar las fuentes de pdfmake:', e);
-        // Usar fuentes básicas si no se pueden cargar las personalizadas
+        console.error('Error cargando fuentes de pdfmake:', e);
+        throw new Error('No se pudieron cargar las fuentes para generar el PDF');
       }
       
       const customization = this.mergeCustomization(ficha.customizations);
       
-      // Construir documento
-      const docDefinition: TDocumentDefinition = {
+      // Construir documento - usar Roboto que es la fuente por defecto de pdfmake
+      const docDefinition: TDocumentDefinitions = {
         pageSize: 'A4',
         pageMargins: [12, 12, 12, 12],
         defaultStyle: {
-          font: 'Helvetica', // Fuente básica que siempre está disponible
+          font: 'Roboto', // pdfmake incluye Roboto por defecto
           fontSize: 10,
         },
         styles: {

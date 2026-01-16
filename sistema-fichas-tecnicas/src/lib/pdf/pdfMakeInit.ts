@@ -5,7 +5,7 @@
  * - UNA sola inicialización aunque se llame N veces simultáneamente
  * - Todas las llamadas concurrentes reutilizan la misma Promise
  * - Carga lazy (on-demand)
- * - Soporte UTF-8 completo con fuente Inter
+ * - Soporte UTF-8 con Roboto (fuente por defecto de pdfmake)
  */
 
 'use client';
@@ -61,45 +61,47 @@ async function initializePdfMake(): Promise<PdfMakeInstance> {
     const pdfMakeModule = await import('pdfmake/build/pdfmake');
     const pdfMake = pdfMakeModule.default || pdfMakeModule;
 
-    // Cargar VFS personalizado con Inter
+    // Cargar fuentes por defecto de pdfmake (Roboto)
     let vfsLoaded = false;
     
     try {
-      const { vfs } = await import('./fonts/vfs_fonts');
+      const pdfFontsModule = await import('pdfmake/build/vfs_fonts');
       
-      if (vfs && Object.keys(vfs).length > 0) {
-        pdfMake.vfs = vfs;
+      // Manejar diferentes estructuras de export
+      if (pdfFontsModule?.pdfMake?.vfs) {
+        pdfMake.vfs = pdfFontsModule.pdfMake.vfs;
         vfsLoaded = true;
-        console.log('[pdfMake] ✅ VFS Inter cargado:', Object.keys(vfs).length, 'fuentes');
-      }
-    } catch (vfsError) {
-      console.warn('[pdfMake] ⚠️ VFS personalizado no disponible:', vfsError);
-    }
-
-    // Fallback: cargar fuentes por defecto de pdfmake
-    if (!vfsLoaded) {
-      try {
-        const pdfFontsModule = await import('pdfmake/build/vfs_fonts');
-        
-        // Manejar diferentes estructuras de export
-        if (pdfFontsModule?.default) {
-          pdfMake.vfs = pdfFontsModule.default;
-        } else if (pdfFontsModule?.pdfMake?.vfs) {
-          pdfMake.vfs = pdfFontsModule.pdfMake.vfs;
-        } else if (pdfFontsModule?.vfs) {
-          pdfMake.vfs = pdfFontsModule.vfs;
+      } else if (pdfFontsModule?.default?.pdfMake?.vfs) {
+        pdfMake.vfs = pdfFontsModule.default.pdfMake.vfs;
+        vfsLoaded = true;
+      } else if (pdfFontsModule?.default) {
+        pdfMake.vfs = pdfFontsModule.default;
+        vfsLoaded = true;
+      } else if (pdfFontsModule?.vfs) {
+        pdfMake.vfs = pdfFontsModule.vfs;
+        vfsLoaded = true;
+      } else {
+        // Buscar vfs en cualquier propiedad del módulo
+        const keys = Object.keys(pdfFontsModule);
+        for (const key of keys) {
+          const obj = (pdfFontsModule as Record<string, any>)[key];
+          if (obj && typeof obj === 'object' && 'vfs' in obj) {
+            pdfMake.vfs = obj.vfs;
+            vfsLoaded = true;
+            break;
+          }
         }
-        
-        console.warn('[pdfMake] ⚠️ Usando fuentes por defecto (Roboto). UTF-8 limitado.');
-      } catch (fallbackError) {
-        console.error('[pdfMake] ❌ No se pudieron cargar fuentes:', fallbackError);
       }
+      
+      if (vfsLoaded) {
+        console.log('[pdfMake] ✅ VFS Roboto cargado correctamente');
+      }
+    } catch (fallbackError) {
+      console.error('[pdfMake] ❌ No se pudieron cargar fuentes:', fallbackError);
     }
 
-    // Configurar fuentes Inter si VFS personalizado está disponible
-    if (vfsLoaded) {
-      const { fonts } = await import('./fonts/fontConfig');
-      pdfMake.fonts = fonts;
+    if (!vfsLoaded) {
+      throw new Error('No se pudo cargar el VFS de fuentes para pdfmake');
     }
 
     return pdfMake as PdfMakeInstance;
